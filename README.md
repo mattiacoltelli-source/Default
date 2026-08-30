@@ -1,6 +1,12 @@
-# Serie A stats — dataset
+# Serie A stats — dataset + app
 
 Dataset JSON pulito e verificato dei giocatori attualmente in Serie A: statistiche avanzate (xG, xA, npxG, xGChain, xGBuildup) per la stagione storica 2025/26 e per la stagione corrente 2026/27 (parziale), quotazioni ufficiali, prezzo medio reale d'asta e fantavoto multi-testata.
+
+## App "Occasioni d'Asta"
+
+`index.html` (+ `manifest.webmanifest`, `icon.svg`) è l'app di supporto per l'asta, pubblicata via GitHub Pages su questo stesso repo: **https://mattiacoltelli-source.github.io/Default/**. Legge i dati dal dataset qui sotto (embedded nella pagina, nessuna chiamata di rete a runtime) e mostra verdetti "consigliato/sconsigliato" motivati, ordinabili/filtrabili, più una sezione bonus difesa.
+
+Per aggiornarla dopo un nuovo `npm run build-data`: rigenerare `index.html` incorporando il nuovo `data/serie-a-master.json` (blob JSON embedded + marker `APP_DATA_VERSION` aggiornato al `generated_at`), poi commit + push su `main` — GitHub Pages ripubblica in automatico in 1-2 minuti. Chi ha la pagina già aperta vede comparire un banner "Aggiorna" (controllo periodico in background, nessun ricaricamento automatico).
 
 Fonti: [Understat](https://understat.com) (statistiche avanzate), [Transfermarkt](https://www.transfermarkt.com) (roster attuale delle 20 squadre di Serie A), [Fantacalcio.it](https://www.fantacalcio.it/quotazioni-fantacalcio) (quotazioni ufficiali Classic ed FVM), [Fantacalcio-Online](https://www.fantacalcio-online.com) (prezzo medio asta reale in crediti e fantavoto per stagione).
 
