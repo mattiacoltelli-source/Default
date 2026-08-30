@@ -66,6 +66,8 @@ function buildSeasonStatsFromAggregate(row) {
     xg90: per90(xg, minutes),
     xa90: per90(xa, minutes),
     npxg90: per90(npxg, minutes),
+    yellow_cards: num(row.yellow_cards),
+    red_cards: num(row.red_cards),
   };
 }
 
@@ -83,6 +85,8 @@ function emptySeasonStats() {
     xg90: null,
     xa90: null,
     npxg90: null,
+    yellow_cards: null,
+    red_cards: null,
   };
 }
 
