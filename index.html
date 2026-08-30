@@ -198,8 +198,9 @@
   thead th .arrow { opacity: 0; font-size: 9px; }
   thead th.sorted .arrow { opacity: 1; }
   tbody tr.row { border-top: 1px solid var(--rule); cursor: pointer; }
-  tbody tr.row:hover { background: var(--bg); }
-  tbody tr.row.open { background: var(--bg-alt); }
+  @media (hover: hover) {
+    tbody tr.row:hover { background: var(--bg); }
+  }
   tbody td { padding: 9px 12px; font-size: 13.5px; vertical-align: middle; }
   .role-pill {
     display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .03em; padding: 3px 7px;
