@@ -1,0 +1,19 @@
+{
+  "name": "serie-a-stats",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Dataset JSON pulito e verificato dei giocatori attualmente in Serie A (Understat + Transfermarkt), per uso futuro in un'app di Fantacalcio.",
+  "scripts": {
+    "fetch-data": "NODE_USE_ENV_PROXY=1 node scripts/fetch-data.js",
+    "normalize-data": "node scripts/normalize-data.js",
+    "build-data": "npm run fetch-data && npm run normalize-data",
+    "validate-data": "node scripts/validate-data.js"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

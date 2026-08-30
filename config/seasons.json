@@ -1,0 +1,18 @@
+{
+  "historical_season": "2025-26",
+  "current_season": "2026-27",
+  "seasons": {
+    "2025-26": {
+      "label": "2025/26",
+      "understat_season": "2025",
+      "transfermarkt_saison_id": "2025",
+      "complete": true
+    },
+    "2026-27": {
+      "label": "2026/27",
+      "understat_season": "2026",
+      "transfermarkt_saison_id": "2026",
+      "complete": false
+    }
+  }
+}

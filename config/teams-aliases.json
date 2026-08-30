@@ -1,0 +1,25 @@
+{
+  "_comment": "Mappa verificata manualmente (2026-08-30) incrociando https://understat.com/league/Serie_A/2026 e https://www.transfermarkt.com/serie-a/startseite/wettbewerb/IT1 — le 20 squadre coincidono su entrambe le fonti.",
+  "teams": [
+    { "key": "inter", "official_name": "Inter Milan", "understat_team_title": "Inter", "understat_team_id": "106", "transfermarkt_slug": "inter-mailand", "transfermarkt_club_id": "46" },
+    { "key": "juventus", "official_name": "Juventus FC", "understat_team_title": "Juventus", "understat_team_id": "98", "transfermarkt_slug": "juventus-turin", "transfermarkt_club_id": "506" },
+    { "key": "roma", "official_name": "AS Roma", "understat_team_title": "Roma", "understat_team_id": "95", "transfermarkt_slug": "as-rom", "transfermarkt_club_id": "12" },
+    { "key": "como", "official_name": "Como 1907", "understat_team_title": "Como", "understat_team_id": "286", "transfermarkt_slug": "como-1907", "transfermarkt_club_id": "1047" },
+    { "key": "milan", "official_name": "AC Milan", "understat_team_title": "AC Milan", "understat_team_id": "111", "transfermarkt_slug": "ac-mailand", "transfermarkt_club_id": "5" },
+    { "key": "atalanta", "official_name": "Atalanta BC", "understat_team_title": "Atalanta", "understat_team_id": "107", "transfermarkt_slug": "atalanta-bergamo", "transfermarkt_club_id": "800" },
+    { "key": "napoli", "official_name": "SSC Napoli", "understat_team_title": "Napoli", "understat_team_id": "105", "transfermarkt_slug": "ssc-neapel", "transfermarkt_club_id": "6195" },
+    { "key": "fiorentina", "official_name": "ACF Fiorentina", "understat_team_title": "Fiorentina", "understat_team_id": "110", "transfermarkt_slug": "ac-florenz", "transfermarkt_club_id": "430" },
+    { "key": "lazio", "official_name": "SS Lazio", "understat_team_title": "Lazio", "understat_team_id": "96", "transfermarkt_slug": "lazio-rom", "transfermarkt_club_id": "398" },
+    { "key": "bologna", "official_name": "Bologna FC 1909", "understat_team_title": "Bologna", "understat_team_id": "97", "transfermarkt_slug": "fc-bologna", "transfermarkt_club_id": "1025" },
+    { "key": "sassuolo", "official_name": "US Sassuolo", "understat_team_title": "Sassuolo", "understat_team_id": "104", "transfermarkt_slug": "us-sassuolo", "transfermarkt_club_id": "6574" },
+    { "key": "genoa", "official_name": "Genoa CFC", "understat_team_title": "Genoa", "understat_team_id": "101", "transfermarkt_slug": "genua-cfc", "transfermarkt_club_id": "252" },
+    { "key": "udinese", "official_name": "Udinese Calcio", "understat_team_title": "Udinese", "understat_team_id": "99", "transfermarkt_slug": "udinese-calcio", "transfermarkt_club_id": "410" },
+    { "key": "parma", "official_name": "Parma Calcio 1913", "understat_team_title": "Parma Calcio 1913", "understat_team_id": "230", "transfermarkt_slug": "parma-calcio-1913", "transfermarkt_club_id": "130" },
+    { "key": "torino", "official_name": "Torino FC", "understat_team_title": "Torino", "understat_team_id": "113", "transfermarkt_slug": "fc-turin", "transfermarkt_club_id": "416" },
+    { "key": "venezia", "official_name": "Venezia FC", "understat_team_title": "Venezia", "understat_team_id": "265", "transfermarkt_slug": "venezia-fc", "transfermarkt_club_id": "607" },
+    { "key": "cagliari", "official_name": "Cagliari Calcio", "understat_team_title": "Cagliari", "understat_team_id": "116", "transfermarkt_slug": "cagliari-calcio", "transfermarkt_club_id": "1390" },
+    { "key": "frosinone", "official_name": "Frosinone Calcio", "understat_team_title": "Frosinone", "understat_team_id": "112", "transfermarkt_slug": "frosinone-calcio", "transfermarkt_club_id": "8970" },
+    { "key": "monza", "official_name": "AC Monza", "understat_team_title": "Monza", "understat_team_id": "271", "transfermarkt_slug": "ac-monza", "transfermarkt_club_id": "2919" },
+    { "key": "lecce", "official_name": "US Lecce", "understat_team_title": "Lecce", "understat_team_id": "243", "transfermarkt_slug": "us-lecce", "transfermarkt_club_id": "1005" }
+  ]
+}
