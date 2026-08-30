@@ -3,7 +3,7 @@ import { readJson, fileExists } from "./lib/fs-utils.js";
 const MIN_PLAYERS = 450;
 const MAX_PLAYERS = 650;
 const TOLERANCE = 0.001;
-const NUMERIC_FIELDS = ["appearances", "minutes", "goals", "assists", "xg", "xa", "npxg", "xg_chain", "xg_buildup", "yellow_cards", "red_cards"];
+const NUMERIC_FIELDS = ["appearances", "minutes", "goals", "assists", "xg", "xa", "npxg", "xg_chain", "xg_buildup", "yellow_cards", "red_cards", "penalties_scored"];
 const FANTAVOTO_FIELDS = ["presenze", "voto_oggettivo", "voto_gazzetta", "voto_corriere", "voto_tuttosport", "fantamedia"];
 
 const errors = [];

@@ -150,6 +150,12 @@ async function main() {
   }
 
   // --- Voti + Kap. Fantacalcio-Online, per stagione ---
+  // NOTA: ho provato a usare il Kap. della stagione storica come "prezzo
+  // asta anno scorso" per un segnale di trend, ma il sito restituisce lo
+  // STESSO valore di Kap. su entrambe le pagine stagionali per ogni
+  // giocatore (verificato su 442 giocatori in comune: 0 differenze) — non e'
+  // un prezzo storico reale, e' lo stesso prezzo corrente ripetuto. Quindi
+  // uso Kap. solo per la stagione corrente; niente trend anno-su-anno.
   const teamNameOnlineToOfficial = new Map(teams.map((t) => [t.fantacalcio_online_team_title, t.official_name]));
   for (const p of players) p.auction = null;
 

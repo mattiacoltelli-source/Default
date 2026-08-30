@@ -53,6 +53,7 @@ function buildSeasonStatsFromAggregate(row) {
   const npxg = round3(num(row.npxG));
   const xgChain = round3(num(row.xGChain));
   const xgBuildup = round3(num(row.xGBuildup));
+  const npg = num(row.npg);
   return {
     appearances,
     minutes,
@@ -68,6 +69,7 @@ function buildSeasonStatsFromAggregate(row) {
     npxg90: per90(npxg, minutes),
     yellow_cards: num(row.yellow_cards),
     red_cards: num(row.red_cards),
+    penalties_scored: goals != null && npg != null ? goals - npg : null,
   };
 }
 
@@ -87,6 +89,7 @@ function emptySeasonStats() {
     npxg90: null,
     yellow_cards: null,
     red_cards: null,
+    penalties_scored: null,
   };
 }
 
