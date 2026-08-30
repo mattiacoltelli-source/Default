@@ -27,7 +27,7 @@ npm run validate-data   # valida data/serie-a-master.json
 ## Output
 
 - `data/serie-a-master.json` — un record per giocatore attualmente in Serie A, con:
-  - storico stagione 2025-26 e stagione corrente 2026-27 (xG/xA/ecc. + `fantavoto` per stagione quando disponibile: presenze, voto Gazzetta/Corriere/Tuttosport, voto oggettivo, Fantamedia);
+  - storico stagione 2025-26 e stagione corrente 2026-27 (xG/xA/ecc., `penalties_scored`, `clean_sheets` per i portieri (ricostruiti dal punteggio reale partita-per-partita, non stimati) + `fantavoto` per stagione quando disponibile: presenze, voto Gazzetta/Corriere/Tuttosport, voto oggettivo, Fantamedia);
   - `price`: quotazione ufficiale Classic (`qt_i`/`qt_a`) e FVM (Fantavalore di Mercato, indicatore di quanto il giocatore "dovrebbe" valere in base al rendimento);
   - `auction`: prezzo medio reale pagato all'asta quest'estate in crediti (`avg_price_credits`), aggregato da migliaia di leghe vere su Fantacalcio-Online — utile per confrontare "quanto costa di solito" con "quanto vale secondo le statistiche".
 - `data/serie-a-matches.json` — dati partita-per-partita, separati per non appesantire il file principale.

@@ -70,6 +70,7 @@ function buildSeasonStatsFromAggregate(row) {
     yellow_cards: num(row.yellow_cards),
     red_cards: num(row.red_cards),
     penalties_scored: goals != null && npg != null ? goals - npg : null,
+    clean_sheets: null,
   };
 }
 
@@ -90,7 +91,25 @@ function emptySeasonStats() {
     yellow_cards: null,
     red_cards: null,
     penalties_scored: null,
+    clean_sheets: null,
   };
+}
+
+// Clean sheet = partita in cui il portiere ha giocato (minuti>0) per la
+// squadra risolta di quella stagione e la squadra non ha subito gol.
+// h_goals/a_goals vengono dal punteggio finale della partita, gia' presente
+// nella cache raw di getPlayerMatches (nessuna richiesta aggiuntiva).
+function computeCleanSheets(team, seasonMatches) {
+  let count = 0;
+  for (const m of seasonMatches) {
+    const minutes = num(m.time);
+    if (!(minutes > 0)) continue;
+    let conceded = null;
+    if (m.h_team === team) conceded = num(m.a_goals);
+    else if (m.a_team === team) conceded = num(m.h_goals);
+    if (conceded === 0) count++;
+  }
+  return count;
 }
 
 function validTeamNamesForSeason(understatLeagueSeason) {
@@ -188,6 +207,10 @@ async function main() {
         teamForSeason = resolved.team;
         teamHistory = resolved.teamHistory;
         ambiguousSeasonSplits += resolved.ambiguousCount;
+
+        if (tm_player.position === "P") {
+          stats.clean_sheets = computeCleanSheets(teamForSeason, seasonMatches);
+        }
 
         if (resolved.matches.length > 0) {
           matchesByPlayerId[playerId] ??= [];
