@@ -938,7 +938,7 @@
       <div class="detail-overlay__head">
         <div>
           <div class="detail-overlay__title">${p.name}${nameBadgesHtml(p)}</div>
-          <div class="detail-overlay__sub"><span class="role-pill ${p.role}">${p.role}</span> ${p.team}</div>
+          <div class="detail-overlay__sub"><span class="role-pill ${p.role}">${p.role}</span> ${p.team}${p.price && p.price.qt_a != null ? ` · Qt.A ${p.price.qt_a}` : ""}</div>
         </div>
         <button type="button" class="detail-overlay__close" id="detail-overlay-close" aria-label="Chiudi">✕</button>
       </div>
