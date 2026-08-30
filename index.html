@@ -918,9 +918,16 @@
       </div>
       ${detailHtml(p)}`;
     detailOverlay.hidden = false;
-    document.getElementById("detail-overlay-close").addEventListener("click", closeDetail);
+    // Il gesto/tasto "indietro" del telefono deve chiudere il dettaglio
+    // invece di uscire dall'app: aggiungo una voce di cronologia che il
+    // popstate qui sotto intercetta e trasforma in una chiusura.
+    history.pushState({ detailOpen: true }, "");
+    document.getElementById("detail-overlay-close").addEventListener("click", () => history.back());
   }
   function closeDetail() { detailOverlay.hidden = true; detailOverlay.innerHTML = ""; }
+  window.addEventListener("popstate", () => {
+    if (!detailOverlay.hidden) closeDetail();
+  });
   document.getElementById("tbody").addEventListener("click", e => {
     const row = e.target.closest("tr.row");
     if (!row) return;
