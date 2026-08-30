@@ -332,7 +332,7 @@
       <p><b>Non è una previsione</b>, è un punteggio a regole su segnali reali, ognuno con un motivo esplicito visibile nella tabella: fantamedia sopra/sotto la media di ruolo, xG+xA sottostanti alti/bassi, rigorista designato (2+ rigori segnati nel 2025/26), gol segnati molto sopra o sotto gli xG (rischio di flessione o possibile rimbalzo), prezzo pagato all'asta basso/alto rispetto al rendimento (FVM), solidità o fragilità della difesa di squadra, minutaggio da titolare o da subentrante, cartellini/espulsioni frequenti. Ogni segnale vale +1 o −1; ≥ 2 → <b>Consigliato</b>, ≤ −2 → <b>Sconsigliato</b>, in mezzo → <b>Neutro</b>. Vengono mostrati solo i 2-3 motivi più rilevanti.</p>
       <p>Il verdetto viene calcolato solo per chi ha almeno 10 presenze nel 2025/26: sotto quella soglia il campione è troppo piccolo per dire qualcosa di affidabile, e compare "dati insufficienti" invece di un giudizio inventato. <b>Non include infortuni</b>: non è un dato disponibile nelle fonti usate, quindi non viene simulato — i cartellini sono l'indicatore di rischio più vicino che i dati permettono onestamente.</p>
       <p>Fonti: Understat (statistiche avanzate e cartellini), Transfermarkt (rose attuali), Fantacalcio.it (quotazioni e FVM), Fantacalcio-Online (prezzo medio asta e fantavoto). Stagione di riferimento per il rendimento: 2025/26 completa; la 2026/27 è appena iniziata e viene usata solo come integrazione.</p>
-      <p>Il "Prezzo asta" è riproporzionato per un'asta da 250 crediti: la fonte aggrega leghe reali senza dichiarare il budget usato, e lo standard più diffuso è 500 crediti, quindi qui vedi il valore dimezzato e arrotondato.</p>
+      <p>Il "Prezzo asta" è riproporzionato per un'asta da 550 crediti: la fonte aggrega leghe reali senza dichiarare il budget usato, e lo standard più diffuso è 500 crediti, quindi qui vedi il valore ricalcolato proporzionalmente e arrotondato.</p>
     </div>
   </details>
 
@@ -377,7 +377,7 @@
         </select>
       </div>
       <div class="field">
-        <label for="max-price" title="Su una base di 250 crediti">Prezzo max</label>
+        <label for="max-price" title="Su una base di 550 crediti">Prezzo max</label>
         <input type="number" id="max-price" min="0" placeholder="—">
       </div>
       <div class="checkfield">
@@ -396,7 +396,7 @@
             <th data-sort="name"><button>Giocatore <span class="arrow">▾</span></button></th>
             <th data-sort="fantamedia"><button><span class="fm-full">Fantamedia<span class="fm-year"> 25/26</span></span><span class="fm-short">FM</span> <span class="arrow">▾</span></button></th>
             <th data-sort="verdict" style="width:260px"><button>Verdetto <span class="arrow">▾</span></button></th>
-            <th data-sort="price" title="Riproporzionato per un'asta da 250 crediti (vedi &quot;Come nasce il Verdetto&quot;)"><button>Prezzo asta <span class="arrow">▾</span></button></th>
+            <th data-sort="price" title="Riproporzionato per un'asta da 550 crediti (vedi &quot;Come nasce il Verdetto&quot;)"><button>Prezzo asta <span class="arrow">▾</span></button></th>
             <th data-sort="qta"><button>Qt.A <span class="arrow">▾</span></button></th>
             <th data-sort="fvm"><button>FVM <span class="arrow">▾</span></button></th>
           </tr>
@@ -459,7 +459,7 @@
   // usa 250: riproporziono linearmente solo per la visualizzazione, il dato
   // grezzo nel dataset resta quello originale.
   const SOURCE_BUDGET = 500;
-  const MY_BUDGET = 250;
+  const MY_BUDGET = 550;
   function toMyBudget(credits) {
     return credits == null ? null : Math.max(1, Math.round(credits / SOURCE_BUDGET * MY_BUDGET));
   }
