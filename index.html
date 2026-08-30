@@ -225,6 +225,29 @@
   .verdict-pill.sconsigliato { background: var(--bad-bg); color: var(--bad); }
   .verdict-pill.neutro { background: var(--badge-bg); color: var(--ink-muted); }
   .verdict-reasons { font-size: 11.5px; color: var(--ink-muted); margin-top: 4px; line-height: 1.35; max-width: 260px; }
+  .fm-short { display: none; }
+  @media (max-width: 640px) {
+    table { width: auto; min-width: 0; }
+    thead th, tbody td { padding: 6px 4px; }
+    thead th { font-size: 10px; white-space: normal; }
+    thead th:nth-child(1), tbody td:nth-child(1) { width: 28px !important; padding-left: 2px; padding-right: 0; }
+    .expand-btn { width: 22px; height: 22px; font-size: 12px; }
+    thead th:nth-child(2), tbody td:nth-child(2) { width: 34px; }
+    .role-pill { padding: 2px 5px; font-size: 10px; }
+    thead th:nth-child(3), tbody td:nth-child(3) { max-width: 96px; }
+    .name-cell { font-size: 12.5px; }
+    .team-cell { font-size: 10.5px; }
+    thead th:nth-child(4), tbody td:nth-child(4) { max-width: 38px; }
+    .fm-year, .fm-full { display: none; }
+    .fm-short { display: inline; }
+    thead th:nth-child(5), tbody td:nth-child(5) { max-width: 68px; }
+    .verdict-cell { min-width: 0; }
+    .verdict-cell .verdict-reasons { display: none; }
+    .verdict-pill {
+      display: block; max-width: 64px; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; text-align: center; font-size: 9.5px; padding: 3px 4px;
+    }
+  }
   .expand-btn {
     background: none; border: 1px solid var(--rule); border-radius: 6px; width: 26px; height: 26px;
     color: var(--ink-muted); cursor: pointer; font-size: 13px; line-height: 1;
@@ -354,11 +377,11 @@
             <th style="width:38px"></th>
             <th data-sort="role">Ruolo</th>
             <th data-sort="name"><button>Giocatore <span class="arrow">▾</span></button></th>
+            <th data-sort="fantamedia"><button><span class="fm-full">Fantamedia<span class="fm-year"> 25/26</span></span><span class="fm-short">FM</span> <span class="arrow">▾</span></button></th>
+            <th data-sort="verdict" style="width:260px"><button>Verdetto <span class="arrow">▾</span></button></th>
             <th data-sort="price"><button>Prezzo asta <span class="arrow">▾</span></button></th>
             <th data-sort="qta"><button>Qt.A <span class="arrow">▾</span></button></th>
             <th data-sort="fvm"><button>FVM <span class="arrow">▾</span></button></th>
-            <th data-sort="fantamedia"><button>Fantamedia 25/26 <span class="arrow">▾</span></button></th>
-            <th data-sort="verdict" style="width:260px"><button>Verdetto <span class="arrow">▾</span></button></th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -618,11 +641,11 @@
         <td><button class="expand-btn" aria-label="Espandi dettagli">${open ? "–" : "+"}</button></td>
         <td><span class="role-pill ${p.role}">${p.role}</span></td>
         <td><div class="name-cell">${p.name}</div><div class="team-cell">${p.team}</div></td>
+        <td class="num">${fm != null ? fm.toFixed(2) : '<span class="dash">—</span>'}</td>
+        <td class="verdict-cell">${verdictHtml(p._verdict)}</td>
         <td class="num">${price != null ? price : '<span class="dash">—</span>'}</td>
         <td class="num">${qta != null ? qta : '<span class="dash">—</span>'}</td>
         <td class="num">${fvm != null ? fvm : '<span class="dash">—</span>'}</td>
-        <td class="num">${fm != null ? fm.toFixed(2) : '<span class="dash">—</span>'}</td>
-        <td class="verdict-cell">${verdictHtml(p._verdict)}</td>
       </tr>
       <tr class="detail-row ${open ? "" : "closed"}" data-detail-for="${p.id}">
         <td colspan="8">${open ? detailHtml(p) : ""}</td>
