@@ -215,6 +215,11 @@
   :root:not([data-theme="light"]) .role-pill.A, :root[data-theme="dark"] .role-pill.A { background: #3a2320; color: #f0c1b8; }
   .name-cell { font-weight: 700; }
   .team-cell { color: var(--ink-muted); font-size: 12.5px; }
+  .occasion-star { font-size: 0.85em; margin-left: 3px; }
+  .occasion-star.gold { color: #c9971f; }
+  .occasion-star.silver { color: #9aa0a6; }
+  .occasion-star.bronze { color: #b0703a; }
+  :root:not([data-theme="light"]) .occasion-star.silver, :root[data-theme="dark"] .occasion-star.silver { color: #c2c8cf; }
   .dash { color: var(--ink-faint); }
   .verdict-cell { min-width: 220px; }
   .verdict-pill {
@@ -354,6 +359,7 @@
       <p>Il verdetto viene calcolato solo per chi ha almeno 10 presenze nel 2025/26: sotto quella soglia il campione è troppo piccolo per dire qualcosa di affidabile, e compare "dati insufficienti" invece di un giudizio inventato. <b>Non include infortuni</b>: non è un dato disponibile nelle fonti usate, quindi non viene simulato — i cartellini sono l'indicatore di rischio più vicino che i dati permettono onestamente.</p>
       <p>Fonti: Understat (statistiche avanzate e cartellini), Transfermarkt (rose attuali), Fantacalcio.it (quotazioni e FVM), Fantacalcio-Online (prezzo medio asta e fantavoto). Stagione di riferimento per il rendimento: 2025/26 completa; la 2026/27 è appena iniziata e viene usata solo come integrazione.</p>
       <p>Il "Prezzo asta" è riproporzionato per un'asta da 550 crediti: la fonte aggrega leghe reali senza dichiarare il budget usato, e lo standard più diffuso è 500 crediti, quindi qui vedi il valore ricalcolato proporzionalmente e arrotondato.</p>
+      <p>La <b>stellina</b> ★ accanto al nome è un segnale separato dal Verdetto: confronta direttamente xG+xA (bonus attesi) col prezzo pagato all'asta, tra difensori/centrocampisti/attaccanti con almeno 10 presenze 2025/26 e prezzo noto (portieri esclusi, xG+xA non è un dato sensato per loro). Oro = primi 25 per rapporto bonus attesi/prezzo, argento = 26°-50°, bronzo = 51°-75°.</p>
     </div>
   </details>
 
@@ -453,6 +459,7 @@
     }
     return sortedAsc.length <= 1 ? 50 : Math.round((lo / (sortedAsc.length - 1)) * 100);
   }
+  function involvement90(s) { return (s.xg90 || 0) + (s.xa90 || 0); }
 
   const byRole = { P: [], D: [], C: [], A: [] };
   PLAYERS.forEach(p => { if (byRole[p.role]) byRole[p.role].push(p); });
@@ -465,8 +472,12 @@
     const xg90s = byRole[role].map(p => p.s2025 ? p.s2025.xg90 : null).filter(v => v != null);
     const xa90s = byRole[role].map(p => p.s2025 ? p.s2025.xa90 : null).filter(v => v != null);
     const goalsOfPlayed = byRole[role].filter(p => p.s2025 && p.s2025.appearances != null && p.s2025.appearances >= 10).map(p => p.s2025.goals).filter(v => v != null);
+    const involvements = byRole[role]
+      .filter(p => p.s2025 && p.s2025.appearances != null && p.s2025.appearances >= 10)
+      .map(p => involvement90(p.s2025))
+      .sort((a, b) => a - b);
     roleStats[role] = {
-      fvms, prices,
+      fvms, prices, involvements,
       avgFantamedia: fantamedie.length ? fantamedie.reduce((a, b) => a + b, 0) / fantamedie.length : null,
       avgInvolvement: (xg90s.length || xa90s.length)
         ? ((xg90s.reduce((a, b) => a + b, 0) + xa90s.reduce((a, b) => a + b, 0)) / Math.max(xg90s.length, xa90s.length))
@@ -507,7 +518,24 @@
     const pricePct = rs ? percentileRank(rs.prices, price) : null;
     p._value = (hasTrackRecord(p) && perfPct != null && pricePct != null) ? (perfPct - pricePct) : null;
     p._defRank = teamDefense[p.team] ? defenseRanking.indexOf(p.team) + 1 : null;
+
+    // Secondo segnale di "occasione", distinto da _value: qui confronto
+    // direttamente xG+xA (bonus attesi) con il prezzo, invece di FVM col
+    // prezzo. Portieri esclusi: xG+xA non e' un indicatore sensato per loro.
+    const performancePct = (p.role !== "P" && rs && rs.involvements.length && p.s2025)
+      ? percentileRank(rs.involvements, involvement90(p.s2025)) : null;
+    p._underpriced = (hasTrackRecord(p) && performancePct != null && pricePct != null)
+      ? (performancePct - pricePct) : null;
   });
+
+  // Classifica a fasce sul gap "bonus attesi vs prezzo": primi 25 stellina
+  // oro, 26-50 argento, 51-75 bronzo. Indipendente dal punteggio Verdetto.
+  PLAYERS.filter(p => p._underpriced != null)
+    .sort((a, b) => b._underpriced - a._underpriced)
+    .forEach((p, i) => {
+      p._occasioneTier = i < 25 ? "gold" : i < 50 ? "silver" : i < 75 ? "bronze" : null;
+      p._occasioneRank = p._occasioneTier ? i + 1 : null;
+    });
 
   /* ---------- verdetto motivato (consigliato / sconsigliato / neutro) ---------- */
   function computeVerdict(p) {
@@ -527,7 +555,7 @@
       else if (diff <= -0.15) push(-1, "fantamedia sotto la media del ruolo");
     }
 
-    const involvement = (s.xg90 || 0) + (s.xa90 || 0);
+    const involvement = involvement90(s);
     if ((p.role === "A" || p.role === "C") && rs && rs.avgInvolvement) {
       if (involvement >= rs.avgInvolvement * 1.25) push(1, "xG+xA sottostanti alti per il ruolo");
       else if (involvement <= rs.avgInvolvement * 0.65) push(-1, "xG+xA sottostanti bassi per il ruolo");
@@ -581,7 +609,7 @@
     if (!hasTrackRecord(p)) return [];
     const s = p.s2025, rs = roleStats[p.role];
     const tags = [];
-    const involvement = (s.xg90 || 0) + (s.xa90 || 0);
+    const involvement = involvement90(s);
     if ((p.role === "A" || p.role === "C") && rs && rs.avgInvolvement && involvement >= rs.avgInvolvement * 1.25) tags.push("xG+xA alti");
     if (p.role === "D" && involvement >= 0.18) tags.push("offensivo");
     if (rs && rs.avgGoals != null && s.goals != null && s.goals >= Math.max(3, rs.avgGoals * 1.3)) tags.push("segna");
@@ -631,6 +659,11 @@
     if (p._value != null) {
       if (p._value >= 30) sentences.push("Il prezzo medio pagato all'asta è nettamente più basso di quanto suggerirebbe il suo rendimento: profilo da tenere d'occhio come possibile occasione.");
       else if (p._value <= -30) sentences.push("Il prezzo medio pagato all'asta è più alto di quanto suggerirebbe il rendimento reale: occhio all'effetto nome.");
+    }
+    if (p._occasioneTier && p.s2025) {
+      const inv = involvement90(p.s2025).toFixed(2);
+      const price = toMyBudget(p.auction ? p.auction.avg_price_credits : null);
+      sentences.push(`xG+xA attesi (${inv}/90') nettamente sopra la media del ruolo a fronte di un prezzo pagato molto basso (${price} cr.): ${p._occasioneRank}ª posizione assoluta per rapporto bonus attesi/prezzo — stellina ${TIER_LABEL[p._occasioneTier]}.`);
     }
     return sentences.join(" ");
   }
@@ -688,6 +721,13 @@
     return dir === "asc" ? r : -r;
   }
 
+  const TIER_LABEL = { gold: "oro", silver: "argento", bronze: "bronzo" };
+  function occasionStarHtml(p) {
+    if (!p._occasioneTier) return "";
+    const label = TIER_LABEL[p._occasioneTier];
+    return `<span class="occasion-star ${p._occasioneTier}" title="Stellina ${label}: tra i migliori rapporti bonus attesi (xG+xA) / prezzo asta">★</span>`;
+  }
+
   function verdictHtml(v) {
     if (!v) return `<span class="dash">—</span>`;
     const label = v.level === "consigliato" ? "Consigliato" : v.level === "sconsigliato" ? "Sconsigliato" : "Neutro";
@@ -707,7 +747,7 @@
       <tr class="row" data-id="${p.id}">
         <td><button class="expand-btn" aria-label="Apri dettagli">+</button></td>
         <td><span class="role-pill ${p.role}">${p.role}</span></td>
-        <td><div class="name-cell">${p.name}</div><div class="team-cell">${p.team}</div></td>
+        <td><div class="name-cell">${p.name}${occasionStarHtml(p)}</div><div class="team-cell">${p.team}</div></td>
         <td class="num">${fm != null ? fm.toFixed(2) : '<span class="dash">—</span>'}</td>
         <td class="verdict-cell">${verdictHtml(p._verdict)}${tags.length ? `<div class="quick-tags">${tags.join(" · ")}</div>` : ""}</td>
         <td class="num">${price != null ? price : '<span class="dash">—</span>'}</td>
@@ -845,7 +885,7 @@
     detailOverlay.innerHTML = `
       <div class="detail-overlay__head">
         <div>
-          <div class="detail-overlay__title">${p.name}</div>
+          <div class="detail-overlay__title">${p.name}${occasionStarHtml(p)}</div>
           <div class="detail-overlay__sub"><span class="role-pill ${p.role}">${p.role}</span> ${p.team}</div>
         </div>
         <button type="button" class="detail-overlay__close" id="detail-overlay-close" aria-label="Chiudi">✕</button>
