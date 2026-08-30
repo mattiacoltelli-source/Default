@@ -251,6 +251,27 @@
     }
     thead th:nth-child(6), tbody td:nth-child(6) { max-width: 36px; }
     .stat-grid { grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 8px 10px; }
+
+    /* filtri compatti: la lista deve iniziare il prima possibile */
+    .view-nav { margin: 8px 0 6px; }
+    .view-nav .tab { padding: 5px 10px; font-size: 12px; }
+    .controls { padding: 8px 0 6px; gap: 6px; row-gap: 6px; }
+    #role-tabs {
+      flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+      padding-bottom: 2px; -webkit-overflow-scrolling: touch;
+    }
+    #role-tabs::-webkit-scrollbar { display: none; }
+    #role-tabs .tab { padding: 5px 10px; font-size: 12px; white-space: nowrap; flex: none; }
+    .controls__spacer { display: none; }
+    .field { gap: 4px; }
+    .field label { font-size: 10.5px; white-space: nowrap; }
+    input[type="search"], select, input[type="number"] { padding: 5px 8px; font-size: 12.5px; }
+    input[type="search"] { width: 148px; }
+    input[type="number"] { width: 52px; }
+    #team-select { max-width: 118px; }
+    #verdict-select { max-width: 96px; }
+    .checkfield { font-size: 10.5px; gap: 4px; }
+    .count-line { padding: 4px 2px 0; font-size: 11px; }
   }
   .expand-btn {
     background: none; border: 1px solid var(--rule); border-radius: 6px; width: 26px; height: 26px;
