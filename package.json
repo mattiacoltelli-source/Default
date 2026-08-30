@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Dataset JSON pulito e verificato dei giocatori attualmente in Serie A (Understat + Transfermarkt), per uso futuro in un'app di Fantacalcio.",
+  "description": "Dataset JSON pulito e verificato dei giocatori attualmente in Serie A (Understat, Transfermarkt, Fantacalcio.it, Fantacalcio-Online), per uso futuro in un'app di Fantacalcio.",
   "scripts": {
     "fetch-data": "NODE_USE_ENV_PROXY=1 node scripts/fetch-data.js",
     "normalize-data": "node scripts/normalize-data.js",
-    "build-data": "npm run fetch-data && npm run normalize-data",
+    "fetch-market-data": "NODE_USE_ENV_PROXY=1 node scripts/fetch-market-data.js",
+    "enrich-market-data": "node scripts/enrich-market-data.js",
+    "build-data": "npm run fetch-data && npm run normalize-data && npm run fetch-market-data && npm run enrich-market-data",
     "validate-data": "node scripts/validate-data.js"
   },
   "dependencies": {

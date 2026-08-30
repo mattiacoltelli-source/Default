@@ -6,12 +6,14 @@
       "label": "2025/26",
       "understat_season": "2025",
       "transfermarkt_saison_id": "2025",
+      "fantacalcio_online_season_slug": "2025-2026",
       "complete": true
     },
     "2026-27": {
       "label": "2026/27",
       "understat_season": "2026",
       "transfermarkt_saison_id": "2026",
+      "fantacalcio_online_season_slug": "2026-2027",
       "complete": false
     }
   }

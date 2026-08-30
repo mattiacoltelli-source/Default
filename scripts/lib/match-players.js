@@ -4,11 +4,29 @@
  * per evitare falsi positivi tra giocatori omonimi di squadre diverse).
  */
 
+// Lettere che NON si scompongono con NFD (non sono "lettera base + accento
+// combinante", ma caratteri Unicode a se' stanti) e quindi vanno mappate a
+// mano, altrimenti sopravvivono alla normalizzazione e fanno fallire il
+// confronto tra fonti che le scrivono in modo diverso (es. Understat/FC-Online
+// "Hojlund" in ASCII puro vs Transfermarkt "Højlund" col carattere originale).
+const SPECIAL_LETTERS = {
+  ø: "o",
+  œ: "oe",
+  æ: "ae",
+  ð: "d",
+  þ: "th",
+  ł: "l",
+  đ: "d",
+  ß: "ss",
+};
+const SPECIAL_LETTERS_RE = new RegExp(Object.keys(SPECIAL_LETTERS).join("|"), "g");
+
 export function normalizeName(name) {
   return name
+    .toLowerCase()
+    .replace(SPECIAL_LETTERS_RE, (ch) => SPECIAL_LETTERS[ch])
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
     .replace(/[.\-']/g, " ")
     .replace(/\s+/g, " ")
     .trim();

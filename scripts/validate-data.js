@@ -4,6 +4,7 @@ const MIN_PLAYERS = 450;
 const MAX_PLAYERS = 650;
 const TOLERANCE = 0.001;
 const NUMERIC_FIELDS = ["appearances", "minutes", "goals", "assists", "xg", "xa", "npxg", "xg_chain", "xg_buildup"];
+const FANTAVOTO_FIELDS = ["presenze", "voto_oggettivo", "voto_gazzetta", "voto_corriere", "voto_tuttosport", "fantamedia"];
 
 const errors = [];
 const warnings = [];
@@ -168,6 +169,29 @@ async function main() {
           }
         }
       }
+
+      if ("fantavoto" in s && s.fantavoto !== null) {
+        for (const field of FANTAVOTO_FIELDS) {
+          const v = s.fantavoto[field];
+          const max = field === "presenze" ? 40 : 20;
+          if (!isNumberOrNull(v)) err(`${sctx}: fantavoto.${field} non e' numero ne' null (${JSON.stringify(v)})`);
+          else if (typeof v === "number" && (v < 0 || v > max)) err(`${sctx}: fantavoto.${field} fuori range plausibile (${v})`);
+        }
+      }
+    }
+
+    if ("price" in p && p.price !== null) {
+      for (const field of ["qt_i", "qt_a", "fvm"]) {
+        const v = p.price[field];
+        if (!isNumberOrNull(v)) err(`${ctx}: price.${field} non e' numero ne' null (${JSON.stringify(v)})`);
+        else if (typeof v === "number" && v < 0) err(`${ctx}: price.${field} negativo (${v})`);
+      }
+    }
+    if ("auction" in p && p.auction !== null) {
+      if (!isNumberOrNull(p.auction.avg_price_credits) || p.auction.avg_price_credits < 0) {
+        err(`${ctx}: auction.avg_price_credits non valido (${JSON.stringify(p.auction.avg_price_credits)})`);
+      }
+      if (!p.auction.season) err(`${ctx}: auction.season mancante`);
     }
   }
 
