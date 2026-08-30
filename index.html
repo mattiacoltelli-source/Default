@@ -231,7 +231,7 @@
   .verdict-pill.consigliato { background: var(--good-bg); color: var(--good); }
   .verdict-pill.sconsigliato { background: var(--bad-bg); color: var(--bad); }
   .verdict-pill.neutro { background: var(--badge-bg); color: var(--ink-muted); }
-  .start-pill { display: inline-block; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 999px; }
+  .start-pill { display: inline-block; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 999px; }
   .start-pill.good { background: var(--good-bg); color: var(--good); }
   .start-pill.bad { background: var(--bad-bg); color: var(--bad); }
   .start-pill.mid { background: var(--badge-bg); color: var(--ink-muted); }
@@ -534,8 +534,9 @@
   function titolaritaHtml(p) {
     const tier = titolaritaTier(p);
     if (!tier) return '<span class="dash">—</span>';
-    const label = tier === "good" ? "Titolare" : tier === "bad" ? "Panchina" : "Rotazione";
-    return `<span class="start-pill ${tier}">${label}</span>`;
+    const full = tier === "good" ? "Titolare" : tier === "bad" ? "Panchina" : "Rotazione";
+    const label = tier === "good" ? "Tit" : tier === "bad" ? "Pan" : "Rot";
+    return `<span class="start-pill ${tier}" title="${full}">${label}</span>`;
   }
 
   PLAYERS.forEach(p => {
