@@ -231,6 +231,10 @@
   .verdict-pill.consigliato { background: var(--good-bg); color: var(--good); }
   .verdict-pill.sconsigliato { background: var(--bad-bg); color: var(--bad); }
   .verdict-pill.neutro { background: var(--badge-bg); color: var(--ink-muted); }
+  .start-pill { display: inline-block; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 999px; }
+  .start-pill.good { background: var(--good-bg); color: var(--good); }
+  .start-pill.bad { background: var(--bad-bg); color: var(--bad); }
+  .start-pill.mid { background: var(--badge-bg); color: var(--ink-muted); }
   .verdict-reasons { font-size: 11.5px; color: var(--ink-muted); margin-top: 4px; line-height: 1.35; max-width: 260px; }
   .quick-tags { font-size: 10.5px; color: var(--accent); font-weight: 700; margin-top: 3px; line-height: 1.3; }
   .fm-short { display: none; }
@@ -363,6 +367,7 @@
       <p>Il "Prezzo asta" è riproporzionato per un'asta da 550 crediti: la fonte aggrega leghe reali senza dichiarare il budget usato, e lo standard più diffuso è 500 crediti, quindi qui vedi il valore ricalcolato proporzionalmente e arrotondato.</p>
       <p>La <b>stellina</b> ★ accanto al nome è un segnale separato dal Verdetto: confronta direttamente xG+xA (bonus attesi) col prezzo pagato all'asta, tra difensori/centrocampisti/attaccanti con almeno 10 presenze 2025/26 e prezzo noto (portieri esclusi, xG+xA non è un dato sensato per loro). Oro = primi 25 per rapporto bonus attesi/prezzo, argento = 26°-50°, bronzo = 51°-75°.</p>
       <p>Altri simbolini accanto al nome, tutti su almeno 10 presenze 2025/26: 🧤 portiere con clean sheet nettamente sopra la media del ruolo (porte inviolate, dal punteggio finale reale di ogni partita); 🛡️ difensore con fantamedia 2025/26 da 6 in su; 🥅 rigorista (2+ rigori segnati nel 2025/26, stesso criterio del tag "rigorista"). Nessun simbolo per i calci di punizione: non ho un dato affidabile su chi li batte, quindi non lo mostro invece di inventarlo.</p>
+      <p>La colonna <b>Titolarità</b> (al posto di Qt.A, sempre visibile nel dettaglio) si basa sui minuti medi a presenza 2025/26, stessa soglia già usata dal Verdetto: <b>Titolare</b> da 85' a presenza in su, <b>Panchina</b> sotto i 55', <b>Rotazione</b> nel mezzo.</p>
     </div>
   </details>
 
@@ -427,7 +432,7 @@
             <th data-sort="fantamedia"><button><span class="fm-full">Fantamedia<span class="fm-year"> 25/26</span></span><span class="fm-short">FM</span> <span class="arrow">▾</span></button></th>
             <th data-sort="verdict" style="width:260px"><button>Verdetto <span class="arrow">▾</span></button></th>
             <th data-sort="price" title="Riproporzionato per un'asta da 550 crediti (vedi &quot;Come nasce il Verdetto&quot;)"><button>Prezzo asta <span class="arrow">▾</span></button></th>
-            <th data-sort="qta"><button>Qt.A <span class="arrow">▾</span></button></th>
+            <th data-sort="titolarita"><button>Titolarità <span class="arrow">▾</span></button></th>
             <th data-sort="fvm"><button>FVM <span class="arrow">▾</span></button></th>
           </tr>
         </thead>
@@ -513,6 +518,24 @@
   const MIN_APPEARANCES_FOR_VALUE = 10;
   function hasTrackRecord(p) {
     return !!(p.s2025 && p.s2025.appearances != null && p.s2025.appearances >= MIN_APPEARANCES_FOR_VALUE);
+  }
+
+  // Stesse soglie gia' usate in computeVerdict per "titolare fisso"/"spesso
+  // subentrante" (minuti/presenza 2025/26), qui esposte come colonna a se'.
+  function titolaritaTier(p) {
+    if (!hasTrackRecord(p)) return null;
+    const s = p.s2025;
+    if (!s.appearances || s.minutes == null) return null;
+    const perApp = s.minutes / s.appearances;
+    if (perApp >= 85) return "good";
+    if (perApp < 55) return "bad";
+    return "mid";
+  }
+  function titolaritaHtml(p) {
+    const tier = titolaritaTier(p);
+    if (!tier) return '<span class="dash">—</span>';
+    const label = tier === "good" ? "Titolare" : tier === "bad" ? "Panchina" : "Rotazione";
+    return `<span class="start-pill ${tier}">${label}</span>`;
   }
 
   PLAYERS.forEach(p => {
@@ -706,7 +729,10 @@
       case "name": return p.name;
       case "role": return p.role;
       case "price": return p.auction ? p.auction.avg_price_credits : null;
-      case "qta": return p.price ? p.price.qt_a : null;
+      case "titolarita": {
+        const s = p.s2025;
+        return (hasTrackRecord(p) && s && s.appearances) ? s.minutes / s.appearances : null;
+      }
       case "fvm": return p.price ? p.price.fvm : null;
       case "fantamedia": return p.s2025 && p.s2025.fantavoto ? p.s2025.fantavoto.fantamedia : null;
       case "verdict": return p._verdict ? p._verdict.score : null;
@@ -765,7 +791,6 @@
 
   function rowHtml(p) {
     const price = toMyBudget(p.auction ? p.auction.avg_price_credits : null);
-    const qta = p.price ? p.price.qt_a : null;
     const fvm = p.price ? p.price.fvm : null;
     const fm = p.s2025 && p.s2025.fantavoto ? p.s2025.fantavoto.fantamedia : null;
     const tags = quickTags(p);
@@ -777,7 +802,7 @@
         <td class="num">${fm != null ? fm.toFixed(2) : '<span class="dash">—</span>'}</td>
         <td class="verdict-cell">${verdictHtml(p._verdict)}${tags.length ? `<div class="quick-tags">${tags.join(" · ")}</div>` : ""}</td>
         <td class="num">${price != null ? price : '<span class="dash">—</span>'}</td>
-        <td class="num">${qta != null ? qta : '<span class="dash">—</span>'}</td>
+        <td class="num">${titolaritaHtml(p)}</td>
         <td class="num">${fvm != null ? fvm : '<span class="dash">—</span>'}</td>
       </tr>`;
   }
