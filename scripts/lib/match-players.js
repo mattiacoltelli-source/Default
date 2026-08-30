@@ -42,6 +42,27 @@ function lastToken(normalized) {
   return parts[parts.length - 1] ?? "";
 }
 
+function tokens(normalized) {
+  return normalized.split(" ").filter(Boolean);
+}
+
+/**
+ * Vero se l'insieme di token del nome piu' corto e' interamente contenuto in
+ * quello del nome piu' lungo (in qualsiasi ordine). Cattura il caso comune di
+ * nomi ispanici/lusofoni con un cognome materno in piu' su una sola fonte
+ * (es. Understat "Matias Soule Malvano" vs Transfermarkt "Matias Soule"),
+ * che il dice coefficient a bigrammi puo' mancare per la soglia.
+ */
+function isTokenSubset(normA, normB) {
+  const ta = tokens(normA);
+  const tb = tokens(normB);
+  if (ta.length === 0 || tb.length === 0) return false;
+  const [shorter, longer] = ta.length <= tb.length ? [ta, tb] : [tb, ta];
+  if (shorter.length < 2) return false; // evita match su un solo token comune (troppo debole)
+  const longerSet = new Set(longer);
+  return shorter.every((tok) => longerSet.has(tok));
+}
+
 const FUZZY_THRESHOLD = 0.85;
 
 /**
@@ -69,7 +90,21 @@ export function matchTeamPlayers(understatPlayers, transfermarktPlayers) {
     }
   }
 
-  // 2) fuzzy match (bigram dice, soglia 0.85), greedy sul punteggio migliore
+  // 2) token-subset match: i token del nome piu' corto sono tutti contenuti
+  //    nel nome piu' lungo (es. cognome materno presente solo su una fonte).
+  //    Confidenza alta: e' un contenimento esatto di parole, non una similarita' approssimata.
+  for (const t of tPool) {
+    if (usedT.has(t.transfermarkt_id)) continue;
+    const subsetCandidates = uPool.filter((u) => !usedU.has(u.understat_id) && isTokenSubset(t._norm, u._norm));
+    if (subsetCandidates.length === 1) {
+      const u = subsetCandidates[0];
+      matches.push({ transfermarkt_id: t.transfermarkt_id, understat_id: u.understat_id, confidence: "high", score: null });
+      usedU.add(u.understat_id);
+      usedT.add(t.transfermarkt_id);
+    }
+  }
+
+  // 3) fuzzy match (bigram dice, soglia 0.85), greedy sul punteggio migliore
   const candidates = [];
   for (const t of tPool) {
     if (usedT.has(t.transfermarkt_id)) continue;
@@ -87,7 +122,7 @@ export function matchTeamPlayers(understatPlayers, transfermarktPlayers) {
     usedT.add(t.transfermarkt_id);
   }
 
-  // 3) fallback solo-cognome, solo se univoco su entrambi i lati residui
+  // 4) fallback solo-cognome, solo se univoco su entrambi i lati residui
   const remainingT = tPool.filter((t) => !usedT.has(t.transfermarkt_id));
   const remainingU = uPool.filter((u) => !usedU.has(u.understat_id));
   for (const t of remainingT) {
