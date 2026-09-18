@@ -21,6 +21,7 @@ const ASSETS = [
   "./predict.js",
   "./manifest.webmanifest",
   "./icon.svg",
+  "./icon-maskable.svg",
 ];
 
 self.addEventListener("install", (event) => {
