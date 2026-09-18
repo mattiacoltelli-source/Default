@@ -1,21 +1,12 @@
 {
-  "name": "serie-a-stats",
+  "name": "app-control-center",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Dataset JSON pulito e verificato dei giocatori attualmente in Serie A (Understat, Transfermarkt, Fantacalcio.it, Fantacalcio-Online), per uso futuro in un'app di Fantacalcio.",
+  "description": "PWA statica che aggrega lo stato di CineFighi, CineTracker, Spot e Predict. Nessuna dipendenza, nessun build.",
   "scripts": {
-    "fetch-data": "NODE_USE_ENV_PROXY=1 node scripts/fetch-data.js",
-    "normalize-data": "node scripts/normalize-data.js",
-    "fetch-market-data": "NODE_USE_ENV_PROXY=1 node scripts/fetch-market-data.js",
-    "enrich-market-data": "node scripts/enrich-market-data.js",
-    "build-data": "npm run fetch-data && npm run normalize-data && npm run fetch-market-data && npm run enrich-market-data",
-    "validate-data": "node scripts/validate-data.js"
+    "test": "node --test",
+    "serve": "python3 -m http.server 8080"
   },
-  "dependencies": {
-    "cheerio": "^1.0.0"
-  },
-  "engines": {
-    "node": ">=20"
-  }
+  "engines": { "node": ">=20" }
 }

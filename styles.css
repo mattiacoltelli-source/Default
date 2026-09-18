@@ -1,0 +1,488 @@
+/* App Control Center — foglio unico, nessun framework.
+   Mobile-first: le media query aggiungono spazio sugli schermi larghi, non
+   ricostruiscono il layout. Nessuna animazione oltre a quelle che servono a
+   capire che qualcosa è cambiato. */
+
+:root {
+  color-scheme: light dark;
+
+  --bg: #f4f5f8;
+  --surface: #ffffff;
+  --surface-2: #eceef3;
+  --line: #dcdfe7;
+  --text: #14161c;
+  --muted: #5d6475;
+
+  --ok: #12855a;
+  --warn: #9a6100;
+  --fail: #c32a30;
+  --unknown: #5d6475;
+
+  --ok-bg: #e4f5ec;
+  --warn-bg: #fdf2dd;
+  --fail-bg: #fdeaea;
+  --unknown-bg: #eceef3;
+
+  --radius: 14px;
+  --gutter: 16px;
+  --tap: 44px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --surface: #171a21;
+    --surface-2: #1f232c;
+    --line: #2a2f3a;
+    --text: #e7eaf0;
+    --muted: #98a0b2;
+
+    --ok: #4ad295;
+    --warn: #f0b429;
+    --fail: #ff6b70;
+    --unknown: #98a0b2;
+
+    --ok-bg: #11291f;
+    --warn-bg: #2d2413;
+    --fail-bg: #2e1618;
+    --unknown-bg: #1f232c;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
+h1, h2, h3, p, ul { margin: 0; }
+ul { list-style: none; padding: 0; }
+a { color: inherit; }
+
+/* ── Barra ─────────────────────────────────────────────────────────────── */
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  /* Sfondo pieno per default: la sfocatura è un miglioramento dove c'è, non
+     un requisito. Senza il fallback, su un browser che non la supporta il
+     contenuto scorrerebbe leggibile attraverso la barra. */
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .bar {
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    backdrop-filter: blur(12px);
+  }
+}
+
+.bar__inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: max(10px, env(safe-area-inset-top)) var(--gutter) 10px;
+}
+
+.bar__title { flex: 1; min-width: 0; }
+
+.bar h1 {
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.bar__sub {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.iconbtn {
+  flex: none;
+  width: var(--tap);
+  height: var(--tap);
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.iconbtn svg { width: 20px; height: 20px; }
+.iconbtn:active { background: var(--surface-2); }
+
+.iconbtn[data-busy="true"] svg { animation: spin 0.9s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .iconbtn[data-busy="true"] svg { animation: none; opacity: 0.5; }
+}
+
+/* ── Verdetto ──────────────────────────────────────────────────────────── */
+
+.verdict {
+  margin: var(--gutter);
+  padding: 18px 18px 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-left: 4px solid var(--unknown);
+}
+
+.verdict[data-level="ok"] { border-left-color: var(--ok); background: var(--ok-bg); }
+.verdict[data-level="warn"] { border-left-color: var(--warn); background: var(--warn-bg); }
+.verdict[data-level="fail"] { border-left-color: var(--fail); background: var(--fail-bg); }
+
+.verdict__state {
+  font-size: 22px;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.verdict__detail {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* ── Blocchi ───────────────────────────────────────────────────────────── */
+
+.block { margin: 24px var(--gutter); }
+
+.block__title {
+  font-size: 12px;
+  font-weight: 640;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+/* ── Problemi ──────────────────────────────────────────────────────────
+   Un elenco, non nove card. Nove superfici separate spingevano le app sotto
+   la piega e ripetevano nove volte lo stesso invito: la riga intera è il
+   bersaglio, quindi il testo del link non serve più. */
+
+.problems {
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.problem {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 13px 14px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.problems li + li .problem { border-top: 1px solid var(--line); }
+
+.problems li.is-extra { display: none; }
+.problems[data-expanded="true"] li.is-extra { display: block; }
+
+a.problem:active { background: var(--surface-2); }
+
+.problem__mark {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 7px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+
+.problem[data-severity="HIGH"] .problem__mark { background: var(--fail); }
+.problem[data-severity="LOW"] .problem__mark { background: var(--unknown); }
+
+.problem__body { min-width: 0; flex: 1; }
+
+.problem__who {
+  font-size: 11px;
+  font-weight: 640;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.problem__what { font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+
+/* Affordance discreta: dice "si apre" senza occupare una riga di testo. */
+.problem__chevron {
+  flex: none;
+  align-self: center;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.showmore {
+  width: 100%;
+  min-height: var(--tap);
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.showmore:active { background: var(--surface-2); }
+
+/* ── Card app ──────────────────────────────────────────────────────────── */
+
+.cards { display: grid; gap: 12px; }
+
+.card {
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+/* Le metriche restano in fondo anche quando le card di una riga hanno
+   altezze diverse: senza, la fascia grigia galleggia a metà card. */
+.card { display: flex; flex-direction: column; }
+.card .metrics { margin-top: auto; }
+
+.card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  width: 100%;
+  min-height: var(--tap);
+}
+
+.dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--unknown);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--unknown) 18%, transparent);
+}
+
+.card[data-level="ok"] .dot { background: var(--ok); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 18%, transparent); }
+.card[data-level="warn"] .dot { background: var(--warn); box-shadow: 0 0 0 4px color-mix(in srgb, var(--warn) 18%, transparent); }
+.card[data-level="fail"] .dot { background: var(--fail); box-shadow: 0 0 0 4px color-mix(in srgb, var(--fail) 18%, transparent); }
+
+.card__name { flex: 1; min-width: 0; }
+
+.card__name strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 640;
+  letter-spacing: -0.01em;
+}
+
+.card__name span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Lo stato è anche una parola, non solo un colore: il colore da solo non
+   arriva a chi non lo distingue. */
+.state {
+  flex: none;
+  font-size: 12px;
+  font-weight: 640;
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: var(--unknown);
+  background: var(--unknown-bg);
+}
+
+.card[data-level="ok"] .state { color: var(--ok); background: var(--ok-bg); }
+.card[data-level="warn"] .state { color: var(--warn); background: var(--warn-bg); }
+.card[data-level="fail"] .state { color: var(--fail); background: var(--fail-bg); }
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px 12px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 560;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--unknown);
+}
+
+.chip[data-level="ok"]::before { background: var(--ok); }
+.chip[data-level="unknown"] { font-style: italic; }
+.chip[data-level="warn"]::before { background: var(--warn); }
+.chip[data-level="fail"]::before { background: var(--fail); }
+.chip[data-level="ok"] { color: var(--text); }
+
+.metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+}
+
+.metric__value {
+  display: block;
+  font-size: 18px;
+  font-weight: 660;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric[data-muted="true"] .metric__value { color: var(--muted); font-weight: 600; }
+
+.metric__label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+
+/* ── Dettaglio ─────────────────────────────────────────────────────────── */
+
+.more { border-top: 1px solid var(--line); }
+
+.more > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--tap);
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 560;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+
+.more > summary:active { background: var(--surface-2); }
+
+.more > summary::-webkit-details-marker { display: none; }
+.more > summary::after { content: "▾"; font-size: 10px; }
+.more[open] > summary::after { content: "▴"; }
+
+.rows { padding: 0 16px 14px; display: grid; gap: 10px; }
+
+.row { display: flex; align-items: baseline; gap: 10px; font-size: 13px; }
+
+.row__key { flex: none; width: 92px; color: var(--muted); }
+
+/* Ultima riga del pannello: è un'azione, non un dato, quindi ha la forma e
+   l'area di tocco di un'azione invece di un URL da leggere. */
+.rowlink {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.rowlink:active { opacity: 0.6; }
+.row__val { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.row__val .muted { color: var(--muted); }
+
+/* ── Caricamento ───────────────────────────────────────────────────────
+   Uno scheletro invece di una pagina vuota: dice "sto guardando" con la
+   forma che i dati avranno, così l'arrivo non è uno scatto. */
+
+.skel {
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  height: 108px;
+}
+
+.skel--verdict { height: 96px; margin: var(--gutter); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .skel { animation: pulse 1.6s ease-in-out infinite; }
+}
+
+@keyframes pulse { 50% { opacity: 0.55; } }
+
+/* ── Piede ─────────────────────────────────────────────────────────────── */
+
+.foot {
+  margin: 28px var(--gutter) 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+  display: grid;
+  gap: 10px;
+}
+
+.foot__links { display: flex; gap: 10px; align-items: center; }
+.foot__links a { min-height: var(--tap); display: inline-flex; align-items: center; font-weight: 600; }
+.foot__note { line-height: 1.6; }
+
+.notice {
+  margin: 0 var(--gutter) 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--warn-bg);
+  color: var(--warn);
+  font-size: 13px;
+}
+
+/* ── Schermi larghi ────────────────────────────────────────────────────── */
+
+@media (min-width: 640px) {
+  main, .bar__inner { max-width: 760px; margin-inline: auto; }
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .verdict__state { font-size: 26px; }
+}
+
+:where(a, button, summary):focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+  border-radius: 8px;
+}

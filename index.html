@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>App Control Center</title>
+<meta name="description" content="Stato in tempo reale delle quattro app: QA, dati, API, performance, deploy e problemi che richiedono attenzione.">
+<meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f7f8fa" media="(prefers-color-scheme: light)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Control Center">
+<link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar__inner">
+    <div class="bar__title">
+      <h1>Control Center</h1>
+      <p class="bar__sub" id="freshness">caricamento…</p>
+    </div>
+    <button type="button" class="iconbtn" id="refresh" aria-label="Aggiorna i dati">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+  <!-- Il verdetto: la sola cosa che deve essere leggibile a braccio teso. -->
+  <section class="verdict" id="verdict" aria-live="polite">
+    <p class="verdict__state">Controllo in corso…</p>
+  </section>
+
+  <!-- Nasce vuota e resta nascosta finché non c'è davvero qualcosa da fare. -->
+  <section class="block" id="attention-block" hidden>
+    <h2 class="block__title">Richiede attenzione</h2>
+    <ul class="problems" id="problems"></ul>
+    <button type="button" class="showmore" id="showmore" hidden></button>
+  </section>
+
+  <section class="block">
+    <h2 class="block__title">Le app</h2>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section class="block" id="toolchain-block" hidden>
+    <h2 class="block__title">Toolchain</h2>
+    <div id="toolchain"></div>
+  </section>
+
+  <footer class="foot">
+    <p class="foot__links">
+      <a href="https://github.com/mattiacoltelli-source/qa-agent/actions" rel="noopener">Lancia un controllo</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://github.com/mattiacoltelli-source/Default" rel="noopener">Codice</a>
+    </p>
+    <p id="sources-note"></p>
+  </footer>
+</main>
+
+<script type="module" src="app.js?v=1"></script>
+</body>
+</html>

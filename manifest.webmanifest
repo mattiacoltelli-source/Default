@@ -1,0 +1,16 @@
+{
+  "name": "App Control Center",
+  "short_name": "Control Center",
+  "description": "Stato delle quattro app in una schermata: QA, dati, API, performance, deploy e problemi aperti.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1115",
+  "theme_color": "#0f1115",
+  "lang": "it",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
