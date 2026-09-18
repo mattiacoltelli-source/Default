@@ -144,8 +144,11 @@ Gli errori JavaScript della dashboard finiscono nel progetto Sentry
 `mattia-e5/control-center`. Una pagina di monitoraggio che si rompe in
 silenzio è peggio che inutile, perché continua a sembrare rassicurante.
 
-- **Loader script**, ~1,5 KB: scarica l'SDK vero solo quando c'è davvero
-  un errore da mandare. In un giorno senza errori non costa niente.
+- **Bundle esplicito, non il Loader Script.** Per le organizzazioni con
+  residenza dati in Europa come questa il loader risponde 200 ma serve uno
+  stub da 567 byte che ignora ogni chiamata: sembra funzionare e non fa
+  nulla. Il bundle costa 90 KB caricati sempre, in `async` — è il prezzo
+  della residenza europea. Stessa versione delle altre tre app.
 - **Niente session replay, niente tracing**: disattivati anche lato
   progetto. Servono a un prodotto con utenti veri, qui brucerebbero quota.
 - **Tetto di 10 eventi per sessione** (`config.js`), più il limite lato

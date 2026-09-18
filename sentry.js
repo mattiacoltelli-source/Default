@@ -4,16 +4,21 @@
 // aprendola: una pagina di monitoraggio che fallisce in silenzio è
 // peggio che inutile, perché continua a sembrare rassicurante.
 //
-// Tre scelte deliberate:
+// **Bundle esplicito, non il Loader Script.** Il loader
+// (js.sentry-cdn.com/<chiave>.min.js) non serve mai il codice vero per le
+// organizzazioni con residenza dati in Europa come questa (de.sentry.io):
+// risponde 200 ma il corpo è uno stub di 567 byte che stampa "The Sentry
+// loader you are trying to use isn't working anymore" e ignora ogni
+// chiamata. È lo stesso motivo per cui CineFighi e CineTracker usano il
+// bundle — vedi il commento nei loro index.html.
 //
-// 1. **Loader script, non bundle.** ~1,5 KB che scaricano l'SDK vero solo
-//    quando c'è davvero un errore. In un giorno senza errori — cioè quasi
-//    tutti — non costa niente, il che conta su un telefono di fascia media.
-// 2. **Niente replay né tracing.** Disattivati anche lato progetto Sentry.
-//    Servono a un prodotto con utenti veri; qui brucerebbero solo quota.
-// 3. **Un tetto per sessione.** Un ciclo di errori impazzito manderebbe
-//    migliaia di eventi identici da una pagina pubblica. Dopo N eventi
-//    questa sessione smette di parlare.
+// Costa 90 KB caricati sempre invece di 1,5 KB caricati solo al bisogno.
+// È il prezzo della residenza dati europea, e si paga in `async`: lo
+// script non blocca il rendering e la pagina funziona identica se il CDN
+// non risponde.
+//
+// Il bundle base non contiene né session replay né tracing: manda solo
+// errori, che è esattamente quello che serve qui e non consuma quota.
 //
 // La DSN sta in chiaro in config.js: è una chiave pubblica di sola
 // scrittura, progettata per i bundle browser, e non dà accesso in lettura
@@ -24,15 +29,20 @@ import { SENTRY } from "./config.js";
 let inviati = 0;
 
 export function initSentry({ release }) {
-  // Prima dell'SDK: il loader la legge quando è pronto.
-  window.sentryOnLoad = () => {
-    window.Sentry?.init({
+  const s = document.createElement("script");
+  s.src = SENTRY.bundle;
+  s.crossOrigin = "anonymous";
+  s.async = true;
+
+  s.addEventListener("load", () => {
+    // Se il CDN serve qualcosa di inatteso, meglio non fare niente che
+    // rompere la pagina che dovrebbe sorvegliare le altre.
+    if (typeof window.Sentry?.init !== "function") return;
+
+    window.Sentry.init({
       dsn: SENTRY.dsn,
       release,
       environment: location.hostname === "localhost" ? "development" : "production",
-      tracesSampleRate: 0,
-      replaysSessionSampleRate: 0,
-      replaysOnErrorSampleRate: 0,
       sendDefaultPii: false,
 
       // Rumore che non è mai un bug di questa pagina: estensioni del
@@ -42,22 +52,20 @@ export function initSentry({ release }) {
         "ResizeObserver loop limit exceeded",
         "ResizeObserver loop completed with undelivered notifications",
         /^AbortError/,
-        /extension\//i,
       ],
       denyUrls: [/extensions\//i, /^chrome:\/\//i, /^moz-extension:\/\//i],
 
+      // Tetto per sessione: una DSN pubblica su una pagina pubblica va
+      // protetta da un ciclo di errori impazzito, che altrimenti
+      // manderebbe migliaia di eventi identici.
       beforeSend(event) {
         if (inviati >= SENTRY.maxEventiPerSessione) return null;
         inviati++;
         return event;
       },
     });
-  };
+  });
 
-  const s = document.createElement("script");
-  s.src = `https://js.sentry-cdn.com/${SENTRY.key}.min.js`;
-  s.crossOrigin = "anonymous";
-  s.async = true;
   document.head.append(s);
 }
 
@@ -73,5 +81,5 @@ export function initSentry({ release }) {
  * eseguito.
  */
 export function segnalaContrattoRotto(error, contesto) {
-  window.Sentry?.captureException(error, { tags: { kind: "data-contract" }, extra: contesto });
+  window.Sentry?.captureException?.(error, { tags: { kind: "data-contract" }, extra: contesto });
 }

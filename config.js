@@ -11,7 +11,7 @@ export const H = 60 * 60 * 1000;
 // Usata come "release" per Sentry: serve a capire da quale versione della
 // pagina arriva un errore. Va alzata quando si cambia qualcosa di
 // sostanziale, insieme a VERSION in sw.js.
-export const APP_VERSION = "1.1.2";
+export const APP_VERSION = "1.1.3";
 
 // ─── Agenti ──────────────────────────────────────────────────────────────
 // `warnH`/`failH`: dopo quante ore un esito smette di valere.
@@ -179,13 +179,12 @@ export const WORKFLOWS = [
 // bundle browser: non dà accesso in lettura a niente e non è un segreto.
 // È l'unica credenziale che può stare qui dentro, e solo per questo motivo.
 //
-// Caricata col loader script (~1.5 KB) invece del bundle intero: scarica
-// l'SDK vero solo quando c'è davvero un errore da mandare, quindi in un
-// giorno normale non costa nulla. Replay e performance monitoring sono
-// disattivati lato progetto — servono a un prodotto con utenti veri, qui
-// brucerebbero soltanto quota.
+// Bundle esplicito e non il Loader Script: per le organizzazioni con
+// residenza dati in Europa come questa il loader risponde 200 ma serve uno
+// stub che ignora ogni chiamata. Stessa versione già usata da CineFighi e
+// CineTracker, così le quattro app restano allineate. Vedi sentry.js.
 export const SENTRY = {
-  key: "e844e6a55fcc8378014c079674522711",
+  bundle: "https://browser.sentry-cdn.com/10.75.0/bundle.min.js",
   dsn: "https://e844e6a55fcc8378014c079674522711@o4511991055450112.ingest.de.sentry.io/4512109896335440",
   // Tetto per sessione: una DSN pubblica su una pagina pubblica va protetta
   // da un ciclo di errori impazzito, che altrimenti manderebbe migliaia di
