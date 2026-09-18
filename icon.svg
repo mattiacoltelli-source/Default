@@ -1,11 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#1f6e43"/>
-  <circle cx="256" cy="256" r="150" fill="#fbf1e9"/>
-  <g fill="#1f6e43">
-    <polygon points="256,166 301,199 284,251 228,251 211,199"/>
-    <polygon points="256,166 211,199 176,166 205,120 307,120 336,166 301,199"/>
-    <polygon points="228,251 176,268 150,222 176,166 211,199"/>
-    <polygon points="284,251 336,268 362,222 336,166 301,199"/>
-    <polygon points="228,251 256,300 284,251 256,281"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Control Center">
+  <rect width="64" height="64" rx="14" fill="#0f1115"/>
+  <circle cx="22" cy="22" r="6" fill="#4ad295"/>
+  <circle cx="42" cy="22" r="6" fill="#f0b429"/>
+  <circle cx="22" cy="42" r="6" fill="#4ad295"/>
+  <circle cx="42" cy="42" r="6" fill="#ff6b70"/>
 </svg>

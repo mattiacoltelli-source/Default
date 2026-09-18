@@ -1,14 +1,16 @@
 {
-  "name": "Occasioni d'Asta",
-  "short_name": "Occasioni",
-  "description": "Trova i giocatori sottovalutati per l'asta del Fantacalcio, con verdetto motivato e bonus difesa.",
-  "start_url": "./index.html",
-  "scope": "./",
+  "name": "App Control Center",
+  "short_name": "Control Center",
+  "description": "Stato delle quattro app in una schermata: QA, dati, API, performance, deploy e problemi aperti.",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
-  "background_color": "#f3e1d6",
-  "theme_color": "#1f6e43",
+  "orientation": "portrait",
+  "background_color": "#0f1115",
+  "theme_color": "#0f1115",
+  "lang": "it",
   "icons": [
     { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+    { "src": "icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
   ]
 }
