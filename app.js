@@ -285,19 +285,30 @@ async function render({ force = false } = {}) {
   renderToolchain(toolchain);
   updateFreshness([...Object.values(statusByAgent), predict], now);
 
-  // Secondo passaggio: commit e deploy. Facoltativo per definizione — se la
-  // quota GitHub è esaurita la pagina resta esattamente com'è, con una nota.
+  // Secondo passaggio: commit e deploy. Facoltativo per definizione — se
+  // l'API non risponde la pagina resta esattamente com'è, con una nota.
+  let attivita = null;
   try {
     const activity = await loadRepoActivity(REPOS);
-    renderCards(appStates, metricsByApp, activity);
-    renderNotice(null);
+    if (Object.values(activity).some((r) => r?.data?.commit)) {
+      attivita = activity;
+      renderCards(appStates, metricsByApp, activity);
+      renderNotice(null);
+    }
   } catch {
-    /* gestito sotto leggendo apiQuota */
+    /* gestito sotto */
   }
 
   if (apiQuota.limited) {
     const when = apiQuota.resetAt ? ` Torna disponibile verso le ${clockTime(apiQuota.resetAt)}.` : "";
     renderNotice(`Quota GitHub esaurita: commit e deploy non aggiornati.${when} Gli stati qui sopra vengono da file pubblici e sono aggiornati.`);
+  } else if (!attivita) {
+    // La quota non è l'unico modo in cui l'API può negarsi (rete, policy
+    // di un proxy aziendale, un guasto di GitHub). Senza questo ramo il
+    // secondo passaggio spariva in silenzio: le card restavano senza
+    // commit né deploy e niente diceva perché — un piccolo buco della
+    // stessa forma di quelli che questa dashboard esiste per chiudere.
+    renderNotice("Commit e deploy non raggiungibili adesso. Gli stati qui sopra vengono da file pubblici e sono aggiornati.");
   }
 
   el.refresh.dataset.busy = "false";
