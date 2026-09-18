@@ -11,7 +11,7 @@ export const H = 60 * 60 * 1000;
 // Usata come "release" per Sentry: serve a capire da quale versione della
 // pagina arriva un errore. Va alzata quando si cambia qualcosa di
 // sostanziale, insieme a VERSION in sw.js.
-export const APP_VERSION = "1.1.0";
+export const APP_VERSION = "1.1.1";
 
 // ─── Agenti ──────────────────────────────────────────────────────────────
 // `warnH`/`failH`: dopo quante ore un esito smette di valere.
@@ -130,7 +130,11 @@ export const REPOS = [...APPS.map((a) => ({ id: a.id, label: a.label, repo: a.re
 // facendo il suo lavoro — non solo se la pagina si apre.
 export const PREDICT = {
   repo: "Prova",
-  branch: "main",
+  // "Main" con la maiuscola: è davvero così che si chiama il branch di
+  // default di quel repo, e raw.githubusercontent distingue le maiuscole
+  // (con "main" risponde 404 e Predict resterebbe "sconosciuta" per
+  // sempre, senza che niente segnali il perché).
+  branch: "Main",
   // Lo slot giornaliero è alle 7:00 ET e la finestra di recupero si chiude
   // entro le ~10:00 ET (vedi predict.yml). Prima di quell'ora un file
   // mancante non è un problema, è solo un lavoro non ancora dovuto.

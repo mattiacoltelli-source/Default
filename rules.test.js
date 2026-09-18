@@ -6,7 +6,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { AGENT_BY_ID, APP_BY_ID, H } from "./config.js";
+import { AGENT_BY_ID, APP_BY_ID, H, PREDICT, QA_BRANCH } from "./config.js";
 import { FAIL, OK, UNKNOWN, WARN, appMetrics, collectProblems, describeAge, describeAgo, evaluateApp, evaluateSignal, overallLevel, worst } from "./rules.js";
 
 const NOW = Date.parse("2026-09-18T20:00:00.000Z");
@@ -202,4 +202,13 @@ test("le età si leggono in italiano, singolare e plurale", () => {
   assert.equal(describeAge(NaN), "data sconosciuta");
   assert.equal(describeAgo(30 * 1000), "adesso");
   assert.equal(describeAgo(5 * 60 * 60 * 1000), "5 ore fa");
+});
+
+test("i branch di default sono quelli veri: raw.githubusercontent distingue le maiuscole", () => {
+  // Scoperto solo verificando il sito pubblicato: il repo di Predict ha il
+  // branch "Main" con la maiuscola. Con "main" ogni fetch risponde 404 e la
+  // app resta "sconosciuta" senza che niente dica perché — esattamente il
+  // fallimento silenzioso che questa dashboard esiste per evitare.
+  assert.equal(QA_BRANCH, "main");
+  assert.equal(PREDICT.branch, "Main");
 });
