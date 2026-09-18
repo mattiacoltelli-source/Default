@@ -8,21 +8,39 @@ export const QA_BRANCH = "main";
 
 export const H = 60 * 60 * 1000;
 
+// Usata come "release" per Sentry: serve a capire da quale versione della
+// pagina arriva un errore. Va alzata quando si cambia qualcosa di
+// sostanziale, insieme a VERSION in sw.js.
+export const APP_VERSION = "1.1.0";
+
 // ─── Agenti ──────────────────────────────────────────────────────────────
 // `warnH`/`failH`: dopo quante ore un esito smette di valere.
 //
-// Non sono numeri decorativi: sono il cuore della dashboard. Un PASS di
-// dieci giorni fa non dice che l'app funziona, dice che dieci giorni fa
-// funzionava — e mostrarlo verde sarebbe una bugia. Le soglie vengono dalla
-// cadenza reale dei workflow in qa-agent:
+// Non sono numeri decorativi: sono il cuore della dashboard. Un PASS di tre
+// giorni fa non dice che l'app funziona, dice che tre giorni fa funzionava
+// — e mostrarlo verde sarebbe una bugia.
 //
-// - "Controllo Completo" (full-check.yml) gira lunedì e giovedì alle 06:00
-//   UTC e lancia tutti e sei gli agenti: l'intervallo normale più lungo è
-//   quindi 4 giorni (giovedì → lunedì). 5 giorni = qualcosa non è partito.
-// - Data Health ha in più un suo giro ogni 6 giorni, ma la soglia qui è
-//   un'altra: Supabase free tier sospende un progetto dopo 7 giorni senza
-//   richieste API. Oltre quel limite CineFighi e CineTracker si spengono da
-//   soli. È l'unica soglia dettata da una conseguenza reale, non da un cron.
+// Le soglie seguono la cadenza reale: "Controllo Completo" (full-check.yml)
+// gira ogni notte alle 02:00 UTC e lancia tutti e sei gli agenti. Quindi:
+//
+// - giallo a 36 ore: un giro saltato può succedere (i cron di GitHub
+//   Actions arrivano in ritardo o non partono affatto sotto carico), ma
+//   va visto;
+// - rosso a 72 ore: tre notti di fila senza un giro non è un ritardo, è
+//   qualcosa che si è rotto — il workflow disattivato, i secret scaduti,
+//   il repo fermo da troppo tempo.
+//
+// Prima del giro giornaliero queste soglie erano 5 e 10 giorni, e con un
+// controllo ogni 3-4 giorni la dashboard viveva quasi sempre al limite del
+// giallo: una soglia che sta sempre per scattare non segnala più niente.
+//
+// Scale e Security restano più larghi: cambiano lentamente e un loro
+// ritardo non è mai un'emergenza.
+//
+// Nota su Data Health: Supabase free tier sospende un progetto dopo 7
+// giorni senza richieste API, e il giro notturno è ciò che tiene svegli i
+// database di CineFighi e CineTracker. Col rosso a 72 ore il problema si
+// vede con quattro giorni di margine sulla sospensione.
 //
 // `covers`: quali app quell'agente guarda davvero, letto dai `PROJECTS` dei
 // rispettivi engine in qa-agent. Serve a distinguere due silenzi che si
@@ -37,12 +55,12 @@ const ALL = ["cinefighi", "cinetracker", "spot", "prova"];
 const CON_BACKEND = ["cinefighi", "cinetracker", "spot"];
 
 export const AGENTS = [
-  { id: "qa", label: "QA", short: "Test end-to-end", warnH: 120, failH: 240, covers: ALL },
-  { id: "data-health", label: "Dati", short: "Uptime e integrità", warnH: 150, failH: 168, covers: CON_BACKEND },
-  { id: "api-doctor", label: "API", short: "API esterne", warnH: 120, failH: 240, covers: ALL },
-  { id: "performance", label: "Perf", short: "Lighthouse", warnH: 120, failH: 240, covers: CON_BACKEND },
-  { id: "scale", label: "Scala", short: "Tenuta a molti dati", warnH: 240, failH: 480, covers: ["cinefighi"] },
-  { id: "security", label: "Dipendenze", short: "npm audit di qa-agent", warnH: 240, failH: 480, covers: [] },
+  { id: "qa", label: "QA", short: "Test end-to-end", warnH: 36, failH: 72, covers: ALL },
+  { id: "data-health", label: "Dati", short: "Uptime e integrità", warnH: 36, failH: 72, covers: CON_BACKEND },
+  { id: "api-doctor", label: "API", short: "API esterne", warnH: 36, failH: 72, covers: ALL },
+  { id: "performance", label: "Perf", short: "Lighthouse", warnH: 36, failH: 72, covers: CON_BACKEND },
+  { id: "scale", label: "Scala", short: "Tenuta a molti dati", warnH: 72, failH: 168, covers: ["cinefighi"] },
+  { id: "security", label: "Dipendenze", short: "npm audit di qa-agent", warnH: 72, failH: 168, covers: [] },
 ];
 
 export const AGENT_BY_ID = Object.fromEntries(AGENTS.map((a) => [a.id, a]));
@@ -122,6 +140,54 @@ export const PREDICT = {
   // processata. Tre giorni coprono un fine settimana lungo senza falsi
   // allarmi: la valutazione aspetta comunque la chiusura dei mercati.
   overdueH: 72,
+};
+
+// ─── Lanciare un controllo a mano ────────────────────────────────────────
+//
+// Deep link alla pagina del workflow, NON una chiamata all'API.
+//
+// Far partire un workflow via API richiede un token con permesso
+// `actions: write`. Questa pagina è statica e pubblica: un token qui dentro
+// sarebbe leggibile da chiunque apra il sorgente, e sarebbe un token in
+// SCRITTURA — chiunque potrebbe lanciare i workflow, consumare i minuti di
+// Actions e, con lo stesso token, toccare i repo. Non esiste un modo di
+// nasconderlo in una pagina statica: l'unica alternativa vera sarebbe una
+// Edge Function che tiene il token lato server e fa da proxy, cioè un
+// componente in più da mantenere e proteggere per risparmiare un tap.
+//
+// Il deep link costa un tocco in più ("Run workflow" sulla pagina GitHub) e
+// zero credenziali. È lo scambio giusto per un'app personale.
+const WF = (repo, file) => `https://github.com/${OWNER}/${repo}/actions/workflows/${file}`;
+
+export const WORKFLOWS = [
+  { id: "full-check", label: "Controllo Completo", detail: "Tutti e sei gli agenti, in sequenza", url: WF(QA_REPO, "full-check.yml"), primary: true },
+  { id: "tests", label: "QA Agent", detail: "Test end-to-end sulle quattro app", url: WF(QA_REPO, "tests.yml") },
+  { id: "data-health", label: "Data Health", detail: "Uptime e integrità dei dati", url: WF(QA_REPO, "data-health.yml") },
+  { id: "api-doctor", label: "API Doctor", detail: "API esterne da cui dipendono le app", url: WF(QA_REPO, "api-doctor.yml") },
+  { id: "performance", label: "Performance", detail: "Punteggi Lighthouse", url: WF(QA_REPO, "performance.yml") },
+  { id: "scale", label: "Scale", detail: "CineFighi con molti più titoli", url: WF(QA_REPO, "scale.yml") },
+  { id: "security", label: "Security", detail: "npm audit delle dipendenze", url: WF(QA_REPO, "security.yml") },
+];
+
+// ─── Sentry ──────────────────────────────────────────────────────────────
+//
+// La DSN è una chiave PUBBLICA di sola scrittura, pensata per stare in un
+// bundle browser: non dà accesso in lettura a niente e non è un segreto.
+// È l'unica credenziale che può stare qui dentro, e solo per questo motivo.
+//
+// Caricata col loader script (~1.5 KB) invece del bundle intero: scarica
+// l'SDK vero solo quando c'è davvero un errore da mandare, quindi in un
+// giorno normale non costa nulla. Replay e performance monitoring sono
+// disattivati lato progetto — servono a un prodotto con utenti veri, qui
+// brucerebbero soltanto quota.
+export const SENTRY = {
+  key: "e844e6a55fcc8378014c079674522711",
+  dsn: "https://e844e6a55fcc8378014c079674522711@o4511991055450112.ingest.de.sentry.io/4512109896335440",
+  // Tetto per sessione: una DSN pubblica su una pagina pubblica va protetta
+  // da un ciclo di errori impazzito, che altrimenti manderebbe migliaia di
+  // eventi identici. Il limite lato progetto esiste già, questo è la rete
+  // di sicurezza che sta nel codice e si verifica leggendolo.
+  maxEventiPerSessione: 10,
 };
 
 // ─── Comportamento ───────────────────────────────────────────────────────

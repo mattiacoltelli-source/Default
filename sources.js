@@ -16,6 +16,7 @@
 // legge, e una chiave dentro un file JS pubblico è una chiave regalata.
 
 import { CACHE_PREFIX, CACHE_TTL, OWNER, QA_BRANCH, QA_REPO, AGENTS, PREDICT } from "./config.js";
+import { segnalaContrattoRotto } from "./sentry.js";
 
 const RAW = "https://raw.githubusercontent.com";
 const API = "https://api.github.com";
@@ -71,6 +72,7 @@ async function cached(key, ttl, fetcher) {
     cacheWrite(key, data);
     return { data, at: Date.now(), stale: false };
   } catch (error) {
+    if (error?.contrattoRotto) segnalaContrattoRotto(error, error.contrattoRotto);
     if (entry) return { data: entry.data, at: entry.at, stale: true, error };
     return { data: null, at: null, stale: true, error };
   }
@@ -86,7 +88,19 @@ async function getRaw(repo, branch, path, { json = true } = {}) {
   const res = await fetch(`${RAW}/${OWNER}/${repo}/${branch}/${path}`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`${repo}/${path}: HTTP ${res.status}`);
-  return json ? res.json() : res.text();
+  if (!json) return res.text();
+
+  try {
+    return await res.json();
+  } catch (e) {
+    // Il file c'è ma non è JSON valido: non è la rete, è il contratto tra
+    // due repo che si è rotto. Va distinto, perché a schermo i due casi si
+    // assomigliano (entrambi finiscono in "sconosciuto") ma solo questo è
+    // un bug da correggere.
+    const error = new Error(`${repo}/${path}: JSON non valido (${e.message})`);
+    error.contrattoRotto = { repo, path };
+    throw error;
+  }
 }
 
 // Stato della quota GitHub, condiviso con la UI: serve a dire "non riesco a

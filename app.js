@@ -11,7 +11,8 @@
 // stringhe scritte da altri, e una dashboard non è il posto dove scoprire
 // che qualcuno ha messo uno <script> in un messaggio di commit.
 
-import { APPS, REPOS, TOOLCHAIN_KEY, AGENT_BY_ID } from "./config.js";
+import { APPS, APP_VERSION, REPOS, TOOLCHAIN_KEY, WORKFLOWS } from "./config.js";
+import { initSentry } from "./sentry.js";
 import { apiQuota, clearCache, loadAgentStatus, loadPredict, loadRepoActivity } from "./sources.js";
 import { appMetrics, clockTime, collectProblems, describeAgo, evaluateApp, evaluateSignal, overallLevel, FAIL, OK, UNKNOWN, WARN } from "./rules.js";
 import { easternNow, predictMetrics, predictSignals } from "./predict.js";
@@ -30,6 +31,10 @@ const el = {
   toolchain: document.getElementById("toolchain"),
   sourcesNote: document.getElementById("sources-note"),
   main: document.getElementById("main"),
+  launch: document.getElementById("launch"),
+  launchList: document.getElementById("launch-list"),
+  launchOpen: document.getElementById("launch-open"),
+  launchClose: document.getElementById("launch-close"),
 };
 
 // ─── Aiuti DOM ───────────────────────────────────────────────────────────
@@ -227,6 +232,32 @@ function renderNotice(text) {
   el.main.insertBefore(node("p", { className: "notice", attrs: { id: "quota-notice" }, text }), el.verdict.nextSibling);
 }
 
+// ─── Lanciare un controllo ───────────────────────────────────────────────
+// Link, non chiamate API: far partire un workflow richiede un token in
+// scrittura, e questa pagina è pubblica. Vedi la nota in config.js.
+
+function renderLaunchSheet() {
+  replace(
+    el.launchList,
+    WORKFLOWS.map((w) =>
+      node("li", {}, [
+        node("a", { className: `sheet__item${w.primary ? " sheet__item--primary" : ""}`, attrs: { href: w.url, rel: "noopener", target: "_blank" } }, [
+          node("div", {}, [node("strong", { text: w.label }), node("span", { text: w.detail })]),
+          node("span", { className: "problem__chevron", text: "›", attrs: { "aria-hidden": "true" } }),
+        ]),
+      ])
+    )
+  );
+}
+
+el.launchOpen.addEventListener("click", () => el.launch.showModal());
+el.launchClose.addEventListener("click", () => el.launch.close());
+
+// Tocco fuori dal foglio = chiudi, come ci si aspetta da un bottom sheet.
+el.launch.addEventListener("click", (e) => {
+  if (e.target === el.launch) el.launch.close();
+});
+
 // ─── Orchestrazione ──────────────────────────────────────────────────────
 
 async function render({ force = false } = {}) {
@@ -307,7 +338,10 @@ function renderSkeleton() {
   replace(el.cards, APPS.map(() => node("div", { className: "skel", attrs: { "aria-hidden": "true" } })));
 }
 
+initSentry({ release: `app-control-center@${APP_VERSION}` });
+
 el.refresh.addEventListener("click", () => render({ force: true }));
+renderLaunchSheet();
 renderSkeleton();
 render();
 

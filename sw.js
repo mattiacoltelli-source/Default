@@ -7,21 +7,25 @@
 // copia offline esiste (in localStorage, gestita da sources.js) ma è
 // dichiarata a schermo come tale, con la sua età.
 
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL = `acc-shell-${VERSION}`;
 
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=1",
-  "./app.js?v=1",
+  "./styles.css?v=2",
+  "./app.js?v=2",
   "./config.js",
   "./sources.js",
   "./rules.js",
   "./predict.js",
+  "./sentry.js",
   "./manifest.webmanifest",
   "./icon.svg",
-  "./icon-maskable.svg",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icon-maskable-512.png",
+  "./apple-touch-icon.png",
 ];
 
 self.addEventListener("install", (event) => {

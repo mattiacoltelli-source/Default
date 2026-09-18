@@ -9,11 +9,11 @@
 <meta name="theme-color" content="#f7f8fa" media="(prefers-color-scheme: light)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Control Center">
-<link rel="stylesheet" href="styles.css?v=1">
+<link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
 
@@ -36,6 +36,10 @@
   <section class="verdict" id="verdict" aria-live="polite">
     <p class="verdict__state">Controllo in corso…</p>
   </section>
+
+  <div class="actions">
+    <button type="button" class="action" id="launch-open">Lancia un controllo</button>
+  </div>
 
   <!-- Nasce vuota e resta nascosta finché non c'è davvero qualcosa da fare. -->
   <section class="block" id="attention-block" hidden>
@@ -64,6 +68,24 @@
   </footer>
 </main>
 
-<script type="module" src="app.js?v=1"></script>
+<!-- <dialog> nativo: gestisce da sé il focus trap, Esc e lo sfondo, senza
+     una libreria e senza che io debba reimplementare l'accessibilità. -->
+<dialog class="sheet" id="launch" aria-labelledby="launch-title">
+  <div class="sheet__head">
+    <h2 id="launch-title">Lancia un controllo</h2>
+    <button type="button" class="iconbtn iconbtn--plain" id="launch-close" aria-label="Chiudi">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+  <p class="sheet__note">
+    Si apre la pagina del workflow su GitHub: premi <strong>Run workflow</strong> per farlo partire.
+    Il Control Center non conserva credenziali, quindi non può lanciarlo al posto tuo.
+  </p>
+  <ul class="sheet__list" id="launch-list"></ul>
+</dialog>
+
+<script type="module" src="app.js?v=2"></script>
 </body>
 </html>

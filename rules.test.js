@@ -6,7 +6,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { APP_BY_ID, H } from "./config.js";
+import { AGENT_BY_ID, APP_BY_ID, H } from "./config.js";
 import { FAIL, OK, UNKNOWN, WARN, appMetrics, collectProblems, describeAge, describeAgo, evaluateApp, evaluateSignal, overallLevel, worst } from "./rules.js";
 
 const NOW = Date.parse("2026-09-18T20:00:00.000Z");
@@ -34,17 +34,34 @@ test("un PASS scaduto NON è verde e lo dice esplicitamente", () => {
   assert.match(s.problems[0].message, /non vale più/);
 });
 
-test("un PASS un po' vecchio è giallo, non ancora rosso", () => {
-  const s = evaluateSignal({ agentId: "qa", entry: { result: "PASS", runAt: hoursAgo(130), summary: "ok" }, now: NOW });
+test("un PASS di ieri è giallo: un giro notturno saltato va visto, non ignorato", () => {
+  const s = evaluateSignal({ agentId: "qa", entry: { result: "PASS", runAt: hoursAgo(48), summary: "ok" }, now: NOW });
   assert.equal(s.level, WARN);
   assert.equal(s.problems[0].severity, "MEDIUM");
 });
 
-test("Data Health scade a 7 giorni, la soglia della sospensione Supabase", () => {
-  const appena = evaluateSignal({ agentId: "data-health", entry: { result: "PASS", runAt: hoursAgo(149) }, now: NOW });
-  const oltre = evaluateSignal({ agentId: "data-health", entry: { result: "PASS", runAt: hoursAgo(169) }, now: NOW });
-  assert.equal(appena.level, OK);
-  assert.equal(oltre.level, FAIL);
+test("un PASS della notte scorsa è verde: il giro è giornaliero", () => {
+  const s = evaluateSignal({ agentId: "qa", entry: { result: "PASS", runAt: hoursAgo(20), summary: "ok" }, now: NOW });
+  assert.equal(s.level, OK);
+  assert.equal(s.problems.length, 0);
+});
+
+test("Data Health diventa rosso con 4 giorni di margine sulla sospensione Supabase", () => {
+  // Supabase free tier sospende un progetto dopo 7 giorni (168h) senza
+  // richieste: il rosso deve arrivare ben prima, non insieme al danno.
+  const SOSPENSIONE_H = 168;
+  const rosso = evaluateSignal({ agentId: "data-health", entry: { result: "PASS", runAt: hoursAgo(73) }, now: NOW });
+
+  assert.equal(rosso.level, FAIL);
+  assert.ok(
+    SOSPENSIONE_H - AGENT_BY_ID["data-health"].failH >= 96,
+    "la soglia rossa di Data Health deve lasciare almeno 4 giorni prima della sospensione Supabase"
+  );
+});
+
+test("Scale e Security tollerano più ritardo: cambiano lentamente", () => {
+  const scale = evaluateSignal({ agentId: "scale", entry: { result: "PASS", runAt: hoursAgo(48) }, now: NOW });
+  assert.equal(scale.level, OK);
 });
 
 test("un segnale mancante è sconosciuto, mai verde", () => {
