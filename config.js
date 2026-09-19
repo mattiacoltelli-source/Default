@@ -11,7 +11,7 @@ export const H = 60 * 60 * 1000;
 // Usata come "release" per Sentry: serve a capire da quale versione della
 // pagina arriva un errore. Va alzata quando si cambia qualcosa di
 // sostanziale, insieme a VERSION in sw.js.
-export const APP_VERSION = "1.2.1";
+export const APP_VERSION = "1.2.2";
 
 // ─── Agenti ──────────────────────────────────────────────────────────────
 // `warnH`/`failH`: dopo quante ore un esito smette di valere.

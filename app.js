@@ -227,7 +227,9 @@ function renderToolchain(voci) {
             node("strong", { text: def.label }),
             node("span", { text: signal.headline || def.detail }),
           ]),
-          node("span", { className: "state", text: STATE_LABEL[signal.level] }),
+          // "Sconosciuto" e "Non attivo" insieme si contraddicono: chi non
+          // è configurato lo dice in un modo solo.
+          node("span", { className: "state", text: signal.attivo === false ? "Non attivo" : STATE_LABEL[signal.level] }),
         ]),
       ])
     )

@@ -7,7 +7,7 @@
 // copia offline esiste (in localStorage, gestita da sources.js) ma è
 // dichiarata a schermo come tale, con la sua età.
 
-const VERSION = "v7";
+const VERSION = "v8";
 const SHELL = `acc-shell-${VERSION}`;
 
 const ASSETS = [
