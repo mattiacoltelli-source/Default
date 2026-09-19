@@ -11,7 +11,7 @@ export const H = 60 * 60 * 1000;
 // Usata come "release" per Sentry: serve a capire da quale versione della
 // pagina arriva un errore. Va alzata quando si cambia qualcosa di
 // sostanziale, insieme a VERSION in sw.js.
-export const APP_VERSION = "1.1.3";
+export const APP_VERSION = "1.2.0";
 
 // ─── Agenti ──────────────────────────────────────────────────────────────
 // `warnH`/`failH`: dopo quante ore un esito smette di valere.
@@ -61,13 +61,25 @@ export const AGENTS = [
   { id: "performance", label: "Perf", short: "Lighthouse", warnH: 36, failH: 72, covers: CON_BACKEND },
   { id: "scale", label: "Scala", short: "Tenuta a molti dati", warnH: 72, failH: 168, covers: ["cinefighi"] },
   { id: "security", label: "Dipendenze", short: "npm audit di qa-agent", warnH: 72, failH: 168, covers: [] },
+  // Non è un agente del QA Agent: è il riassunto delle issue aperte su
+  // Sentry nelle ultime 24 ore, pubblicato dallo stesso workflow notturno
+  // (vedi qa-agent/status/sentry-status.mjs). Sta qui perché per chi legge
+  // è un segnale come gli altri — "questa app sta dando errori?" — e per
+  // la dashboard è lo stesso identico contratto.
+  { id: "sentry", label: "Errori", short: "Errori lato client, ultime 24h", warnH: 36, failH: 72, covers: ALL },
 ];
 
 export const AGENT_BY_ID = Object.fromEntries(AGENTS.map((a) => [a.id, a]));
 
-// Il Security Agent guarda le dipendenze di qa-agent, non una delle quattro
-// app: vive in fondo alla pagina, non dentro una card.
-export const TOOLCHAIN_KEY = "qa-agent";
+// Due segnali che non riguardano nessuna delle quattro app: le dipendenze
+// di qa-agent e gli errori della dashboard stessa. Vivono in fondo alla
+// pagina, non dentro una card, perché non è di loro che ti preoccupi
+// quando apri l'app — ma se il Control Center va in errore è bene saperlo
+// da qualche parte che non sia il Control Center.
+export const TOOLCHAIN = [
+  { agent: "security", key: "qa-agent", label: "qa-agent", detail: "dipendenze npm" },
+  { agent: "sentry", key: "control-center", label: "Control Center", detail: "errori di questa pagina" },
+];
 
 // ─── Le quattro app ──────────────────────────────────────────────────────
 // `metrics`: solo numeri che dicono qualcosa sul prodotto. Nessuna metrica
@@ -122,7 +134,7 @@ export const APP_BY_ID = Object.fromEntries(APPS.map((a) => [a.id, a]));
 
 // Repo interrogati per commit e deploy. qa-agent è incluso: se smette di
 // funzionare, tutti i segnali qui sopra smettono di aggiornarsi.
-export const REPOS = [...APPS.map((a) => ({ id: a.id, label: a.label, repo: a.repo })), { id: TOOLCHAIN_KEY, label: "QA Agent", repo: QA_REPO }];
+export const REPOS = [...APPS.map((a) => ({ id: a.id, label: a.label, repo: a.repo })), { id: "qa-agent", label: "QA Agent", repo: QA_REPO }];
 
 // ─── Predict: segnali suoi ───────────────────────────────────────────────
 // L'unica app che pubblica dati propri leggibili (previsioni ed esiti sono

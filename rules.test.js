@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { AGENT_BY_ID, APP_BY_ID, H, PREDICT, QA_BRANCH } from "./config.js";
-import { FAIL, OK, UNKNOWN, WARN, appMetrics, collectProblems, describeAge, describeAgo, evaluateApp, evaluateSignal, overallLevel, worst } from "./rules.js";
+import { FAIL, OK, UNKNOWN, WARN, appMetrics, collectProblems, describeAge, describeAgo, evaluateApp, evaluateSignal, isAutomatico, overallLevel, recentChanges, worst } from "./rules.js";
 
 const NOW = Date.parse("2026-09-18T20:00:00.000Z");
 const hoursAgo = (h) => new Date(NOW - h * H).toISOString();
@@ -138,11 +138,29 @@ test("un agente che non copre una app non la rende eternamente sconosciuta", () 
   const statusByAgent = {
     qa: { data: { apps: { prova: { result: "PASS", runAt: hoursAgo(3) } } } },
     "api-doctor": { data: { apps: { prova: { result: "PASS", runAt: hoursAgo(3) } } } },
+    sentry: { data: { apps: { prova: { result: "PASS", runAt: hoursAgo(3) } } } },
   };
 
   const state = evaluateApp({ app: APP_BY_ID.prova, statusByAgent, now: NOW });
-  assert.deepEqual(state.signals.map((s) => s.agentId).sort(), ["api-doctor", "qa"]);
+  assert.deepEqual(state.signals.map((s) => s.agentId).sort(), ["api-doctor", "qa", "sentry"]);
   assert.equal(state.level, OK);
+});
+
+test("gli errori Sentry sono un segnale come gli altri e pesano sulla card", () => {
+  const statusByAgent = {
+    qa: { data: { apps: { spot: { result: "PASS", runAt: hoursAgo(3) } } } },
+    sentry: {
+      data: {
+        apps: {
+          spot: { result: "WARN", runAt: hoursAgo(3), summary: "2 errori · 7 eventi in 24h", problems: [{ severity: "MEDIUM", message: "TypeError: x is not a function" }] },
+        },
+      },
+    },
+  };
+
+  const state = evaluateApp({ app: APP_BY_ID.spot, statusByAgent, now: NOW });
+  assert.equal(state.level, WARN);
+  assert.ok(state.problems.some((p) => /TypeError/.test(p.message)));
 });
 
 test("un agente che copre una app ma non l'ha mai controllata resta un dubbio vero", () => {
@@ -211,4 +229,35 @@ test("i branch di default sono quelli veri: raw.githubusercontent distingue le m
   // fallimento silenzioso che questa dashboard esiste per evitare.
   assert.equal(QA_BRANCH, "main");
   assert.equal(PREDICT.branch, "Main");
+});
+
+test("i commit automatici non sono 'cambiamenti recenti'", () => {
+  // Predict ne produce diversi al giorno: senza filtro seppellirebbero
+  // ogni modifica vera, che è l'unica cosa che questa sezione deve dire.
+  assert.equal(isAutomatico("chore(performance): aggiorna storico run [skip ci]"), true);
+  assert.equal(isAutomatico("Valutazione automatica 2026-09-18T23:27:56Z"), true);
+  assert.equal(isAutomatico("chore: bump versione a 57bf0dd [skip ci]"), true);
+  assert.equal(isAutomatico("Merge branch 'claude/x' into main"), true);
+  assert.equal(isAutomatico("fix: il voto non si salvava su iOS"), false);
+  assert.equal(isAutomatico("Aggiunge Sentry per gli errori lato client"), false);
+});
+
+test("la cronologia unisce le app e ordina dal più recente", () => {
+  const activity = {
+    cinefighi: { data: { commits: [
+      { sha: "aaa", message: "fix: voto su iOS", at: new Date(NOW - 2 * H).toISOString(), url: "u1" },
+      { sha: "bbb", message: "chore: bump versione [skip ci]", at: new Date(NOW - 1 * H).toISOString(), url: "u2" },
+    ] } },
+    spot: { data: { commits: [{ sha: "ccc", message: "Aggiunge Sentry", at: new Date(NOW - 5 * H).toISOString(), url: "u3" }] } },
+  };
+  const repos = [{ id: "cinefighi", label: "CineFighi" }, { id: "spot", label: "Spot" }];
+
+  const changes = recentChanges(activity, repos);
+  assert.deepEqual(changes.map((c) => c.message), ["fix: voto su iOS", "Aggiunge Sentry"]);
+  assert.equal(changes[0].appLabel, "CineFighi");
+});
+
+test("senza dati dall'API la cronologia è vuota, non inventata", () => {
+  assert.deepEqual(recentChanges(null, []), []);
+  assert.deepEqual(recentChanges({ spot: { data: null } }, [{ id: "spot", label: "Spot" }]), []);
 });

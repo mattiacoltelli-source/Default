@@ -11,10 +11,10 @@
 // stringhe scritte da altri, e una dashboard non è il posto dove scoprire
 // che qualcuno ha messo uno <script> in un messaggio di commit.
 
-import { APPS, APP_VERSION, REPOS, TOOLCHAIN_KEY, WORKFLOWS } from "./config.js";
+import { APPS, APP_VERSION, REPOS, TOOLCHAIN, WORKFLOWS } from "./config.js";
 import { initSentry } from "./sentry.js";
 import { apiQuota, clearCache, loadAgentStatus, loadPredict, loadRepoActivity } from "./sources.js";
-import { appMetrics, clockTime, collectProblems, describeAgo, evaluateApp, evaluateSignal, overallLevel, FAIL, OK, UNKNOWN, WARN } from "./rules.js";
+import { appMetrics, clockTime, collectProblems, describeAgo, evaluateApp, evaluateSignal, overallLevel, recentChanges, FAIL, OK, UNKNOWN, WARN } from "./rules.js";
 import { easternNow, predictMetrics, predictSignals } from "./predict.js";
 
 const STATE_LABEL = { [OK]: "Tutto ok", [WARN]: "Da guardare", [FAIL]: "Problema", [UNKNOWN]: "Sconosciuto" };
@@ -29,6 +29,8 @@ const el = {
   cards: document.getElementById("cards"),
   toolchainBlock: document.getElementById("toolchain-block"),
   toolchain: document.getElementById("toolchain"),
+  changesBlock: document.getElementById("changes-block"),
+  changes: document.getElementById("changes"),
   sourcesNote: document.getElementById("sources-note"),
   main: document.getElementById("main"),
   launch: document.getElementById("launch"),
@@ -213,17 +215,44 @@ function row(key, valueChildren) {
   return node("div", { className: "row" }, [node("span", { className: "row__key", text: key }), node("span", { className: "row__val" }, valueChildren.filter(Boolean))]);
 }
 
-function renderToolchain(signal) {
+function renderToolchain(voci) {
   el.toolchainBlock.hidden = false;
-  replace(el.toolchain, [
-    node("article", { className: "card", attrs: { "data-level": signal.level } }, [
-      node("div", { className: "card__head" }, [
-        node("span", { className: "dot", attrs: { "aria-hidden": "true" } }),
-        node("div", { className: "card__name" }, [node("strong", { text: "qa-agent" }), node("span", { text: signal.headline || signal.short })]),
-        node("span", { className: "state", text: STATE_LABEL[signal.level] }),
-      ]),
-    ]),
-  ]);
+  replace(
+    el.toolchain,
+    voci.map(({ def, signal }) =>
+      node("article", { className: "card", attrs: { "data-level": signal.level } }, [
+        node("div", { className: "card__head" }, [
+          node("span", { className: "dot", attrs: { "aria-hidden": "true" } }),
+          node("div", { className: "card__name" }, [
+            node("strong", { text: def.label }),
+            node("span", { text: signal.headline || def.detail }),
+          ]),
+          node("span", { className: "state", text: STATE_LABEL[signal.level] }),
+        ]),
+      ])
+    )
+  );
+}
+
+// Resta nascosta finché l'API non risponde: una sezione "ultimi
+// cambiamenti" vuota non informa, occupa solo spazio.
+function renderChanges(activity) {
+  const changes = recentChanges(activity, REPOS);
+  el.changesBlock.hidden = changes.length === 0;
+  if (!changes.length) return;
+
+  replace(
+    el.changes,
+    changes.map((c) =>
+      node("li", {}, [
+        node("a", { className: "change", attrs: { href: c.url, rel: "noopener", target: "_blank" } }, [
+          node("span", { className: "change__app", text: c.appLabel }),
+          node("span", { className: "change__what", text: c.message }),
+          node("span", { className: "change__when", text: describeAgo(Date.now() - c.at) }),
+        ]),
+      ])
+    )
+  );
 }
 
 function renderNotice(text) {
@@ -276,10 +305,17 @@ async function render({ force = false } = {}) {
     APPS.map((app) => [app.id, app.id === "prova" ? predictMetrics(predict.data) : appMetrics(app, statusByAgent)])
   );
 
-  const toolchain = evaluateSignal({ agentId: "security", entry: statusByAgent.security?.data?.apps?.[TOOLCHAIN_KEY], now });
-  const problems = collectProblems(appStates, toolchain.problems.map((p) => ({ ...p, appLabel: "qa-agent", signal: toolchain.label, url: toolchain.runUrl })));
+  const toolchain = TOOLCHAIN.map((def) => ({
+    def,
+    signal: evaluateSignal({ agentId: def.agent, entry: statusByAgent[def.agent]?.data?.apps?.[def.key], now }),
+  }));
 
-  renderVerdict(overallLevel(appStates, [toolchain.level]), problems, appStates);
+  const problems = collectProblems(
+    appStates,
+    toolchain.flatMap(({ def, signal }) => signal.problems.map((p) => ({ ...p, appLabel: def.label, signal: signal.label, url: p.url ?? signal.runUrl })))
+  );
+
+  renderVerdict(overallLevel(appStates, toolchain.map((t) => t.signal.level)), problems, appStates);
   renderProblems(problems);
   renderCards(appStates, metricsByApp, null);
   renderToolchain(toolchain);
@@ -293,6 +329,7 @@ async function render({ force = false } = {}) {
     if (Object.values(activity).some((r) => r?.data?.commit)) {
       attivita = activity;
       renderCards(appStates, metricsByApp, activity);
+      renderChanges(activity);
       renderNotice(null);
     }
   } catch {

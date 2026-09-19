@@ -545,6 +545,55 @@ a.problem:active { background: var(--surface-2); }
 
 @keyframes pulse { 50% { opacity: 0.55; } }
 
+/* ── Cambiamenti recenti ───────────────────────────────────────────────
+   Stessa superficie unica dell'elenco problemi: sono due liste, e due
+   liste nella stessa pagina devono somigliarsi. */
+
+.changes {
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.change {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 11px 14px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.changes li + li .change { border-top: 1px solid var(--line); }
+a.change:active { background: var(--surface-2); }
+
+.change__app {
+  flex: none;
+  width: 84px;
+  font-size: 12px;
+  font-weight: 640;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.change__what {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.change__when {
+  flex: none;
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Piede ─────────────────────────────────────────────────────────────── */
 
 .foot {

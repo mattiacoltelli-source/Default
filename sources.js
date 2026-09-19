@@ -283,7 +283,10 @@ export async function loadRepoActivity(repos) {
     repos.map(async (r) => {
       const res = await cached(`repo:${r.repo}`, CACHE_TTL.api, async () => {
         const [commits, runs] = await Promise.all([
-          getApi(`/repos/${OWNER}/${r.repo}/commits?per_page=1`),
+          // Cinque invece di uno: stesso costo in quota (una richiesta),
+          // ma abbastanza per costruire la cronologia dei cambiamenti
+          // senza una seconda chiamata per repo.
+          getApi(`/repos/${OWNER}/${r.repo}/commits?per_page=5`),
           getApi(`/repos/${OWNER}/${r.repo}/actions/runs?per_page=10`),
         ]);
 
@@ -295,13 +298,16 @@ export async function loadRepoActivity(repos) {
         const deploy = all.find((w) => /pages/i.test(w.name ?? "") && w.conclusion === "success");
         const failed = all.find((w) => w.conclusion === "failure");
 
+        const leggi = (c) => ({
+          sha: c.sha.slice(0, 7),
+          message: (c.commit?.message ?? "").split("\n")[0],
+          at: c.commit?.author?.date ?? c.commit?.committer?.date ?? null,
+          url: c.html_url,
+        });
+
         return {
-          commit: commit && {
-            sha: commit.sha.slice(0, 7),
-            message: (commit.commit?.message ?? "").split("\n")[0],
-            at: commit.commit?.author?.date ?? commit.commit?.committer?.date ?? null,
-            url: commit.html_url,
-          },
+          commit: commit && leggi(commit),
+          commits: (commits ?? []).map(leggi),
           deploy: deploy && { at: deploy.updated_at, url: deploy.html_url },
           failedRun: failed && { name: failed.name, at: failed.updated_at, url: failed.html_url, branch: failed.head_branch },
         };

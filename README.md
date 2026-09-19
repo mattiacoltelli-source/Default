@@ -26,6 +26,10 @@ tutto. Quello che nessuno strumento dice è **cosa non è successo**:
 - **Le valutazioni di Predict rimaste indietro.** Previsioni il cui
   orizzonte è scaduto da giorni e che sono ancora in `pending.json`: è il
   modo in cui `evaluate.yml` fallisce senza far diventare rosso niente.
+- **Gli errori che i tuoi utenti vedono e tu no.** Tutte e cinque le app
+  mandano gli errori JavaScript a Sentry, ma aprire Sentry sarebbe un
+  quinto posto da controllare. Qui compaiono come un segnale come gli
+  altri: *"2 errori · 7 eventi in 24h"*, con i tre più rumorosi in cima.
 - **Data Health che smette di girare.** Supabase free tier sospende un
   progetto dopo 7 giorni senza richieste API: oltre quel limite CineFighi
   e CineTracker si spengono da soli. Il giro notturno è ciò che li tiene
@@ -55,6 +59,7 @@ statica su GitHub Pages che legge due sorgenti pubbliche:
 ```
 raw.githubusercontent.com
 ├── qa-agent/status/*.json          esito dei sei agenti (vedi qa-agent/status/README.md)
+├── qa-agent/status/sentry.json     errori lato client delle ultime 24h
 ├── qa-agent/history/data/*.jsonl   ripiego finché un agente non pubblica lo stato
 └── Prova/REPORT.md, data/…         dati che Predict committa da sé
                 ↓
@@ -98,7 +103,7 @@ da dato a dato, ed è lì che vive il giudizio.
 ## Sviluppo
 
 ```bash
-npm test      # 38 test, node --test, nessun pacchetto da installare
+npm test      # 43 test, node --test, nessun pacchetto da installare
 npm run serve # http://localhost:8080
 ```
 
@@ -117,11 +122,24 @@ soglie seguono quella cadenza:
 | Scale, Security | 3 giorni | 7 giorni | Cambiano lentamente, un ritardo non è un'emergenza |
 | Previsioni Predict | — | slot delle 7:00 ET passato | Solo nei giorni feriali, e solo dopo la chiusura della finestra di recupero |
 | Valutazioni Predict | 1 in ritardo | oltre 3 | Oltre 3 giorni dalla scadenza dell'orizzonte |
+| Errori Sentry | 1 issue aperta | una issue `fatal` | Un errore va guardato, non è un incendio |
 
 Il rosso di Data Health a 72 ore lascia **4 giorni di margine** prima che
 Supabase sospenda i database: è un test, non un commento.
 
 Stanno tutte in `config.js`.
+
+## Ultimi cambiamenti
+
+Una riga per commit, unendo le quattro app più qa-agent. Risponde alla
+prima domanda che ci si fa quando qualcosa diventa rosso: **"cosa ho
+toccato?"**
+
+I commit automatici sono filtrati (`[skip ci]`, `chore(`, "Valutazione
+automatica", bump di versione, merge). Sono il segno che l'automazione
+funziona, non una risposta a quella domanda — e Predict da solo ne
+produce diversi al giorno, abbastanza da seppellire ogni modifica vera.
+La regola sta in `isAutomatico()` in `rules.js`.
 
 ## Lanciare un controllo a mano
 

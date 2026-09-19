@@ -7,14 +7,14 @@
 // copia offline esiste (in localStorage, gestita da sources.js) ma è
 // dichiarata a schermo come tale, con la sua età.
 
-const VERSION = "v5";
+const VERSION = "v6";
 const SHELL = `acc-shell-${VERSION}`;
 
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=2",
-  "./app.js?v=2",
+  "./styles.css?v=3",
+  "./app.js?v=3",
   "./config.js",
   "./sources.js",
   "./rules.js",

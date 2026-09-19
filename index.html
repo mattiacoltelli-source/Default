@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Control Center">
-<link rel="stylesheet" href="styles.css?v=2">
+<link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
 
@@ -53,6 +53,11 @@
     <div class="cards" id="cards"></div>
   </section>
 
+  <section class="block" id="changes-block" hidden>
+    <h2 class="block__title">Ultimi cambiamenti</h2>
+    <ul class="changes" id="changes"></ul>
+  </section>
+
   <section class="block" id="toolchain-block" hidden>
     <h2 class="block__title">Toolchain</h2>
     <div id="toolchain"></div>
@@ -86,6 +91,6 @@
   <ul class="sheet__list" id="launch-list"></ul>
 </dialog>
 
-<script type="module" src="app.js?v=2"></script>
+<script type="module" src="app.js?v=3"></script>
 </body>
 </html>

@@ -174,3 +174,47 @@ export function clockTime(timestamp) {
   if (!Number.isFinite(timestamp)) return "—";
   return new Date(timestamp).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
 }
+
+// ─── Cambiamenti recenti ─────────────────────────────────────────────────
+
+// Commit che le macchine scrivono a se stesse: bump di versione, storico
+// salvato, previsioni valutate, snapshot di prezzo. Sono il segno che
+// l'automazione funziona, non una risposta a "cosa ho cambiato io?" —
+// e sono così frequenti (Predict ne produce diversi al giorno) che
+// lasciarli seppellirebbe ogni modifica vera sotto una colonna di rumore.
+const AUTOMATICI = [
+  /\[skip ci\]/i,
+  /^chore\(/i,
+  /^Valutazione automatica/i,
+  /^Analisi trend/i,
+  /^Snapshot/i,
+  /^Merge branch/i,
+  /^Merge pull request/i,
+  /bump (della )?versione/i,
+  /bump asset version/i,
+];
+
+export function isAutomatico(messaggio) {
+  return AUTOMATICI.some((re) => re.test(messaggio ?? ""));
+}
+
+/**
+ * La cronologia unificata delle quattro app: cosa è cambiato, dove, quando.
+ *
+ * Serve a una domanda sola, ma è la prima che ci si fa quando qualcosa
+ * diventa rosso: "cosa ho toccato?". Per questo i commit automatici
+ * vengono tolti — la risposta utile è una modifica fatta da una persona.
+ */
+export function recentChanges(activity, repos, limite = 6) {
+  if (!activity) return [];
+
+  return repos
+    .flatMap((r) =>
+      (activity[r.id]?.data?.commits ?? [])
+        .filter((c) => c.at && !isAutomatico(c.message))
+        .map((c) => ({ ...c, appId: r.id, appLabel: r.label, at: Date.parse(c.at) }))
+    )
+    .filter((c) => Number.isFinite(c.at))
+    .sort((a, b) => b.at - a.at)
+    .slice(0, limite);
+}
