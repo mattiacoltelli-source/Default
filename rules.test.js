@@ -261,3 +261,39 @@ test("senza dati dall'API la cronologia è vuota, non inventata", () => {
   assert.deepEqual(recentChanges(null, []), []);
   assert.deepEqual(recentChanges({ spot: { data: null } }, [{ id: "spot", label: "Spot" }]), []);
 });
+
+test("un segnale opzionale mai pubblicato non intacca il semaforo della app", () => {
+  // Sentry richiede un secret che potrebbe non essere mai impostato. Finché
+  // non pubblica, le altre cinque lenti guardano comunque quella app: una
+  // integrazione non configurata non deve rendere gialla tutta la dashboard.
+  const statusByAgent = {
+    qa: { data: { apps: { spot: { result: "PASS", runAt: hoursAgo(3) } } } },
+    "data-health": { data: { apps: { spot: { result: "PASS", runAt: hoursAgo(3) } } } },
+    "api-doctor": { data: { apps: { spot: { result: "PASS", runAt: hoursAgo(3) } } } },
+    performance: { data: { apps: { spot: { result: "PASS", runAt: hoursAgo(3) } } } },
+    // sentry: assente del tutto, come quando il secret non c'è
+  };
+
+  const state = evaluateApp({ app: APP_BY_ID.spot, statusByAgent, now: NOW });
+  const sentry = state.signals.find((s) => s.agentId === "sentry");
+
+  assert.equal(state.level, OK, "le altre lenti dicono PASS: la card resta verde");
+  assert.equal(sentry.attivo, false, "ma il segnale si vede comunque, marcato come non attivo");
+  assert.equal(sentry.headline, "Non attivo");
+});
+
+test("appena pubblica una volta, il segnale opzionale torna a giudicare", () => {
+  const statusByAgent = {
+    qa: { data: { apps: { spot: { result: "PASS", runAt: hoursAgo(3) } } } },
+    // Ha pubblicato per un'altra app ma non per questa: è un dubbio vero,
+    // non una integrazione mancante.
+    sentry: { data: { apps: { cinefighi: { result: "PASS", runAt: hoursAgo(3) } } } },
+  };
+
+  const state = evaluateApp({ app: APP_BY_ID.spot, statusByAgent, now: NOW });
+  const sentry = state.signals.find((s) => s.agentId === "sentry");
+
+  assert.notEqual(sentry.attivo, false);
+  assert.equal(sentry.level, UNKNOWN);
+  assert.equal(state.level, UNKNOWN);
+});

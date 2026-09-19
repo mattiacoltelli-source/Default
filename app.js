@@ -11,7 +11,7 @@
 // stringhe scritte da altri, e una dashboard non è il posto dove scoprire
 // che qualcuno ha messo uno <script> in un messaggio di commit.
 
-import { APPS, APP_VERSION, REPOS, TOOLCHAIN, WORKFLOWS } from "./config.js";
+import { AGENT_BY_ID, APPS, APP_VERSION, REPOS, TOOLCHAIN, WORKFLOWS } from "./config.js";
 import { initSentry } from "./sentry.js";
 import { apiQuota, clearCache, loadAgentStatus, loadPredict, loadRepoActivity } from "./sources.js";
 import { appMetrics, clockTime, collectProblems, describeAgo, evaluateApp, evaluateSignal, overallLevel, recentChanges, FAIL, OK, UNKNOWN, WARN } from "./rules.js";
@@ -158,7 +158,7 @@ function renderCards(appStates, metricsByApp, activity) {
               attrs: { "data-level": s.level, title: `${s.short}${s.headline ? ` — ${s.headline}` : ""}` },
               // Un chip senza età accanto a uno con l'età si legge come
               // "va bene"; la parola dice quello che il vuoto non dice.
-              text: `${s.label}${s.ageMs != null ? ` · ${describeAgo(s.ageMs)}` : s.level === UNKNOWN ? " · mai" : ""}`,
+              text: `${s.label}${s.ageMs != null ? ` · ${describeAgo(s.ageMs)}` : s.attivo === false ? " · non attivo" : s.level === UNKNOWN ? " · mai" : ""}`,
             })
           )
         ),
@@ -305,21 +305,23 @@ async function render({ force = false } = {}) {
     APPS.map((app) => [app.id, app.id === "prova" ? predictMetrics(predict.data) : appMetrics(app, statusByAgent)])
   );
 
-  const toolchain = TOOLCHAIN.map((def) => ({
-    def,
-    signal: evaluateSignal({ agentId: def.agent, entry: statusByAgent[def.agent]?.data?.apps?.[def.key], now }),
-  }));
+  const toolchain = TOOLCHAIN.map((def) => {
+    const pubblicato = statusByAgent[def.agent]?.data != null;
+    const signal = evaluateSignal({ agentId: def.agent, entry: statusByAgent[def.agent]?.data?.apps?.[def.key], now });
+    const attivo = pubblicato || !AGENT_BY_ID[def.agent]?.optional;
+    return { def, signal: attivo ? signal : { ...signal, attivo: false, headline: "Non attivo" } };
+  });
 
   const problems = collectProblems(
     appStates,
     toolchain.flatMap(({ def, signal }) => signal.problems.map((p) => ({ ...p, appLabel: def.label, signal: signal.label, url: p.url ?? signal.runUrl })))
   );
 
-  renderVerdict(overallLevel(appStates, toolchain.map((t) => t.signal.level)), problems, appStates);
+  renderVerdict(overallLevel(appStates, toolchain.filter((t) => t.signal.attivo !== false).map((t) => t.signal.level)), problems, appStates);
   renderProblems(problems);
   renderCards(appStates, metricsByApp, null);
   renderToolchain(toolchain);
-  updateFreshness([...Object.values(statusByAgent), predict], now);
+  updateFreshness([...Object.entries(statusByAgent).map(([agent, r]) => ({ ...r, agent })), predict], now);
 
   // Secondo passaggio: commit e deploy. Facoltativo per definizione — se
   // l'API non risponde la pagina resta esattamente com'è, con una nota.
@@ -373,9 +375,13 @@ function updateFreshness(results, now) {
   el.freshness.textContent = anyStale ? `copia locale di ${describeAgo(now - oldest)} — non riesco ad aggiornare` : `aggiornato ${describeAgo(now - oldest)}`;
 
   const sources = withData.filter((r) => r.data?.source === "history").length;
+  const sentrySpento = results.some((r) => r?.agent === "sentry" && r.data == null);
+
   el.sourcesNote.textContent = sources
     ? `${sources} agenti letti dallo storico: non hanno ancora pubblicato uno stato. Lancia "Controllo Completo" per averli aggiornati.`
-    : "Stato letto dai file pubblicati da qa-agent; commit e deploy dall'API GitHub pubblica.";
+    : sentrySpento
+      ? "Errori Sentry non attivi: manca il secret SENTRY_AUTH_TOKEN in qa-agent. Tutto il resto è aggiornato."
+      : "Stato letto dai file pubblicati da qa-agent; commit e deploy dall'API GitHub pubblica.";
 }
 
 // Prima che arrivi qualunque dato: la forma di quello che arriverà, invece

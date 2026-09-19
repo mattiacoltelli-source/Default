@@ -108,14 +108,23 @@ export function evaluateApp({ app, statusByAgent, extraSignals = [], now }) {
   // dubbi permanenti sono il modo più veloce per insegnare a ignorarli.
   const signals = AGENTS
     .filter((agent) => agent.covers.includes(app.id))
-    .map((agent) => evaluateSignal({ agentId: agent.id, entry: statusByAgent[agent.id]?.data?.apps?.[app.id], now }));
+    .map((agent) => {
+      const pubblicato = statusByAgent[agent.id]?.data != null;
+      const signal = evaluateSignal({ agentId: agent.id, entry: statusByAgent[agent.id]?.data?.apps?.[app.id], now });
+      // Opzionale e mai pubblicato = non ancora configurato: si mostra, ma
+      // non giudica. Appena pubblica una volta torna un segnale come tutti
+      // gli altri, scadenza compresa.
+      return agent.optional && !pubblicato ? { ...signal, attivo: false, headline: "Non attivo" } : signal;
+    });
 
   const all = [...signals, ...extraSignals];
   const problems = all.flatMap((s) =>
     s.problems.map((p) => ({ ...p, appId: app.id, appLabel: app.label, signal: s.label, url: p.url ?? s.runUrl ?? null }))
   );
 
-  return { id: app.id, label: app.label, tagline: app.tagline, site: app.site, level: worst(all.map((s) => s.level)), signals: all, problems };
+  const giudicanti = all.filter((s) => s.attivo !== false);
+
+  return { id: app.id, label: app.label, tagline: app.tagline, site: app.site, level: worst(giudicanti.map((s) => s.level)), signals: all, problems };
 }
 
 /** Metriche di prodotto di una app, prese dallo stato dell'agente che le produce. */

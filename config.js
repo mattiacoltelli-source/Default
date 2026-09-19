@@ -11,7 +11,7 @@ export const H = 60 * 60 * 1000;
 // Usata come "release" per Sentry: serve a capire da quale versione della
 // pagina arriva un errore. Va alzata quando si cambia qualcosa di
 // sostanziale, insieme a VERSION in sw.js.
-export const APP_VERSION = "1.2.0";
+export const APP_VERSION = "1.2.1";
 
 // ─── Agenti ──────────────────────────────────────────────────────────────
 // `warnH`/`failH`: dopo quante ore un esito smette di valere.
@@ -66,7 +66,18 @@ export const AGENTS = [
   // (vedi qa-agent/status/sentry-status.mjs). Sta qui perché per chi legge
   // è un segnale come gli altri — "questa app sta dando errori?" — e per
   // la dashboard è lo stesso identico contratto.
-  { id: "sentry", label: "Errori", short: "Errori lato client, ultime 24h", warnH: 36, failH: 72, covers: ALL },
+  //
+  // `optional`: finché questo segnale non ha pubblicato NEMMENO UNA volta,
+  // non pesa sul semaforo delle app. Richiede un secret (SENTRY_AUTH_TOKEN
+  // in qa-agent) che potrebbe non essere mai impostato, e un'integrazione
+  // non configurata non deve rendere gialla tutta la dashboard: le altre
+  // cinque lenti guardano comunque quelle app e dicono PASS.
+  //
+  // Non è un'eccezione al principio "un segnale mancante non è verde": un
+  // segnale che non è MAI esistito non fa ancora parte del sistema, mentre
+  // uno che c'era e si è fermato è un problema. La differenza è quella tra
+  // "non l'ho installato" e "si è rotto", e vanno dette in modo diverso.
+  { id: "sentry", label: "Errori", short: "Errori lato client, ultime 24h", warnH: 36, failH: 72, covers: ALL, optional: true },
 ];
 
 export const AGENT_BY_ID = Object.fromEntries(AGENTS.map((a) => [a.id, a]));
