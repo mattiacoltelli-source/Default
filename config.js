@@ -11,7 +11,7 @@ export const H = 60 * 60 * 1000;
 // Usata come "release" per Sentry: serve a capire da quale versione della
 // pagina arriva un errore. Va alzata quando si cambia qualcosa di
 // sostanziale, insieme a VERSION in sw.js.
-export const APP_VERSION = "1.2.2";
+export const APP_VERSION = "1.2.3";
 
 // ─── Agenti ──────────────────────────────────────────────────────────────
 // `warnH`/`failH`: dopo quante ore un esito smette di valere.
@@ -53,13 +53,23 @@ export const APP_VERSION = "1.2.2";
 // fretta a ignorare tutti i dubbi.
 const ALL = ["cinefighi", "cinetracker", "spot", "prova"];
 const CON_BACKEND = ["cinefighi", "cinetracker", "spot"];
+// CineFighi è sospesa dal QA Agent e dallo Scale Agent (2026-09-23): è
+// l'unica app con un database condiviso da persone vere, e quelle due
+// suite erano le uniche a scriverci dentro. I controlli che restano su
+// CineFighi — uptime, integrità dati, Lighthouse, API, errori — sono tutti
+// di sola lettura.
+//
+// Toglierla da `covers` e non lasciarla "sconosciuta": un segnale che non
+// esiste più per scelta non è un dubbio, e un dubbio permanente insegna a
+// ignorare i dubbi.
+const SENZA_CINEFIGHI = ALL.filter((a) => a !== "cinefighi");
 
 export const AGENTS = [
-  { id: "qa", label: "QA", short: "Test end-to-end", warnH: 36, failH: 72, covers: ALL },
+  { id: "qa", label: "QA", short: "Test end-to-end", warnH: 36, failH: 72, covers: SENZA_CINEFIGHI },
   { id: "data-health", label: "Dati", short: "Uptime e integrità", warnH: 36, failH: 72, covers: CON_BACKEND },
   { id: "api-doctor", label: "API", short: "API esterne", warnH: 36, failH: 72, covers: ALL },
   { id: "performance", label: "Perf", short: "Lighthouse", warnH: 36, failH: 72, covers: CON_BACKEND },
-  { id: "scale", label: "Scala", short: "Tenuta a molti dati", warnH: 72, failH: 168, covers: ["cinefighi"] },
+  { id: "scale", label: "Scala", short: "Tenuta a molti dati", warnH: 72, failH: 168, covers: [] },
   { id: "security", label: "Dipendenze", short: "npm audit di qa-agent", warnH: 72, failH: 168, covers: [] },
   // Non è un agente del QA Agent: è il riassunto delle issue aperte su
   // Sentry nelle ultime 24 ore, pubblicato dallo stesso workflow notturno

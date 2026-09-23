@@ -121,14 +121,22 @@ test("una app prende il peggiore dei suoi segnali", () => {
   assert.equal(state.problems[0].appLabel, "Spot");
 });
 
-test("Scale riguarda solo CineFighi: altrove non compare nemmeno come dubbio", () => {
+test("un agente sospeso non compare da nessuna parte, nemmeno come dubbio", () => {
+  // Scale e QA sono sospesi su CineFighi (vedi config.js): un segnale che
+  // non esiste più per scelta non deve restare "sconosciuto" per sempre.
   const statusByAgent = { scale: { data: { apps: { cinefighi: { result: "PASS", runAt: hoursAgo(5) } } } } };
 
-  const cinefighi = evaluateApp({ app: APP_BY_ID.cinefighi, statusByAgent, now: NOW });
-  const spot = evaluateApp({ app: APP_BY_ID.spot, statusByAgent, now: NOW });
+  for (const app of [APP_BY_ID.cinefighi, APP_BY_ID.spot]) {
+    const state = evaluateApp({ app, statusByAgent, now: NOW });
+    assert.ok(!state.signals.some((s) => s.agentId === "scale"), `scale non deve comparire su ${app.id}`);
+  }
 
-  assert.ok(cinefighi.signals.some((s) => s.agentId === "scale"));
-  assert.ok(!spot.signals.some((s) => s.agentId === "scale"));
+  const cinefighi = evaluateApp({ app: APP_BY_ID.cinefighi, statusByAgent: {}, now: NOW });
+  assert.ok(!cinefighi.signals.some((s) => s.agentId === "qa"), "nemmeno il QA Agent, sospeso su CineFighi");
+
+  // Sulle altre app il QA Agent resta un segnale vero.
+  const spot = evaluateApp({ app: APP_BY_ID.spot, statusByAgent: {}, now: NOW });
+  assert.ok(spot.signals.some((s) => s.agentId === "qa"));
 });
 
 test("un agente che non copre una app non la rende eternamente sconosciuta", () => {
