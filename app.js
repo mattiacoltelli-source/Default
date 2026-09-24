@@ -263,6 +263,81 @@ function renderNotice(text) {
   el.main.insertBefore(node("p", { className: "notice", attrs: { id: "quota-notice" }, text }), el.verdict.nextSibling);
 }
 
+// ─── Aggiornamenti (service worker) ──────────────────────────────────────
+// sw.js mette in cache il guscio dell'app: un codice nuovo non prende mai
+// il posto di quello vecchio da solo, resta "in attesa" finché non è
+// l'utente a chiederlo esplicitamente col bottone qui sotto — mai
+// sostituire la pagina sotto i piedi di chi la sta guardando in quel
+// momento (vedi il commento gemello in sw.js).
+
+function initUpdateCheck() {
+  if (!("serviceWorker" in navigator)) return;
+
+  navigator.serviceWorker
+    .register("sw.js")
+    .then((reg) => {
+      // Se un worker è già "in attesa" da un controllo precedente a questo
+      // caricamento (es. un'altra scheda l'ha già trovato), "updatefound"
+      // non scatterà mai per lui: va controllato anche qui, non solo sotto.
+      if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(reg.waiting);
+
+      reg.update(); // controlla subito se c'è una versione più recente
+
+      reg.addEventListener("updatefound", () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+        // Non solo sui cambi di stato futuri: il passaggio a "installed" può
+        // già essere avvenuto nel momento stesso in cui questo listener si
+        // aggancia (il browser non aspetta noi), e senza questo controllo
+        // immediato quel passaggio andrebbe perso in silenzio.
+        const avvisaSeInstallato = () => {
+          if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+            showUpdateBanner(newWorker);
+          }
+        };
+        newWorker.addEventListener("statechange", avvisaSeInstallato);
+        avvisaSeInstallato();
+      });
+
+      // "Chiudere e riaprire" spesso non ricarica davvero questo script
+      // (bfcache): pageshow (persisted, proprio per il ripristino da
+      // bfcache) e visibilitychange coprono anche il semplice "torno da
+      // un'altra scheda", così un controllo di versione non resta bloccato
+      // a tempo indeterminato dopo un vero riavvio dell'app.
+      const recheckForUpdate = () => { if (document.visibilityState === "visible") reg.update(); };
+      window.addEventListener("pageshow", recheckForUpdate);
+      document.addEventListener("visibilitychange", recheckForUpdate);
+    })
+    .catch(() => {});
+
+  let alreadyReloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (alreadyReloading) return;
+    alreadyReloading = true;
+    // NON location.reload(): GitHub Pages può servire l'HTML dalla cache
+    // del browser (max-age=600) invece di quello fresco, con ancora dentro
+    // i link ai file vecchi. Un URL mai visto prima (con un parametro in
+    // più) è per forza un cache-miss: il browser va in rete e prende
+    // davvero i file nuovi.
+    const url = new URL(window.location.href);
+    url.searchParams.set("_v", Date.now().toString(36));
+    window.location.replace(url.toString());
+  });
+}
+
+function showUpdateBanner(worker) {
+  if (document.getElementById("update-banner")) return;
+  const bar = node("div", { className: "update-banner", attrs: { id: "update-banner" } }, [
+    node("span", { text: "Nuova versione disponibile" }),
+    node("button", { className: "update-banner__btn", text: "Aggiorna", attrs: { type: "button" } }),
+  ]);
+  document.body.append(bar);
+  bar.querySelector(".update-banner__btn").addEventListener("click", () => {
+    worker.postMessage({ type: "SKIP_WAITING" });
+    bar.remove();
+  });
+}
+
 // ─── Lanciare un controllo ───────────────────────────────────────────────
 // Link, non chiamate API: far partire un workflow richiede un token in
 // scrittura, e questa pagina è pubblica. Vedi la nota in config.js.
@@ -408,6 +483,4 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") render();
 });
 
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
-}
+window.addEventListener("load", initUpdateCheck);

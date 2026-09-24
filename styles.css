@@ -620,6 +620,52 @@ a.change:active { background: var(--surface-2); }
   font-size: 13px;
 }
 
+/* ── Banner di aggiornamento ────────────────────────────────────────────
+   Compare solo quando sw.js ha già scaricato una versione nuova e sta
+   aspettando il tocco su "Aggiorna" (vedi initUpdateCheck() in app.js):
+   non sostituisce mai la pagina da solo. */
+
+.update-banner {
+  position: fixed;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 12px 12px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  animation: update-banner-in 220ms ease-out;
+}
+
+@keyframes update-banner-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.update-banner span { font-size: 14px; font-weight: 620; }
+
+.update-banner__btn {
+  flex-shrink: 0;
+  min-height: var(--tap);
+  padding: 0 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--text);
+  color: var(--bg);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.update-banner__btn:active { opacity: 0.85; }
+
 /* ── Schermi larghi ────────────────────────────────────────────────────── */
 
 @media (min-width: 640px) {
