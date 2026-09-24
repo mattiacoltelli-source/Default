@@ -3,7 +3,7 @@
   "version": "1.2.0",
   "private": true,
   "type": "module",
-  "description": "PWA statica che aggrega lo stato di CineFighi, CineTracker, Spot e Predict. Nessun build, nessun pacchetto da installare.",
+  "description": "PWA statica che aggrega lo stato di CineTracker, Spot e Predict. Nessun build, nessun pacchetto da installare.",
   "scripts": {
     "test": "node --test",
     "serve": "python3 -m http.server 8080"

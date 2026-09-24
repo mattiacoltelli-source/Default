@@ -208,7 +208,7 @@ export function isAutomatico(messaggio) {
 }
 
 /**
- * La cronologia unificata delle quattro app: cosa è cambiato, dove, quando.
+ * La cronologia unificata delle tre app: cosa è cambiato, dove, quando.
  *
  * Serve a una domanda sola, ma è la prima che ci si fa quando qualcosa
  * diventa rosso: "cosa ho toccato?". Per questo i commit automatici

@@ -3,9 +3,8 @@
 PWA statica che risponde a una domanda sola: **"le mie app stanno bene, o
 c'è qualcosa che richiede la mia attenzione?"**
 
-Monitora CineFighi, CineTracker, Spot e Predict. Si apre da telefono, dice
-la risposta in tre secondi, e se la risposta è "no" dice cosa guardare e
-dove.
+Monitora CineTracker, Spot e Predict. Si apre da telefono, dice la risposta
+in tre secondi, e se la risposta è "no" dice cosa guardare e dove.
 
 👉 https://mattiacoltelli-source.github.io/Default/
 
@@ -26,21 +25,22 @@ tutto. Quello che nessuno strumento dice è **cosa non è successo**:
 - **Le valutazioni di Predict rimaste indietro.** Previsioni il cui
   orizzonte è scaduto da giorni e che sono ancora in `pending.json`: è il
   modo in cui `evaluate.yml` fallisce senza far diventare rosso niente.
-- **Gli errori che i tuoi utenti vedono e tu no.** Tutte e cinque le app
+- **Gli errori che i tuoi utenti vedono e tu no.** Tutte e tre le app
   mandano gli errori JavaScript a Sentry, ma aprire Sentry sarebbe un
-  quinto posto da controllare. Qui compaiono come un segnale come gli
+  quarto posto da controllare. Qui compaiono come un segnale come gli
   altri: *"2 errori · 7 eventi in 24h"*, con i tre più rumorosi in cima.
 - **Data Health che smette di girare.** Supabase free tier sospende un
-  progetto dopo 7 giorni senza richieste API: oltre quel limite CineFighi
-  e CineTracker si spengono da soli. Il giro notturno è ciò che li tiene
-  svegli, e il rosso arriva con quattro giorni di margine sul danno.
+  progetto dopo 7 giorni senza richieste API: oltre quel limite CineTracker
+  si spegne da sola. Il giro notturno è ciò che la tiene sveglia, e il
+  rosso arriva con quattro giorni di margine sul danno.
 
 ## Cosa NON fa
 
 Non esegue controlli propri. Non apre browser, non interroga le API delle
-app, non tocca Supabase. Quel lavoro lo fa già il QA Agent con sei agenti
-dedicati, e rifarlo qui significherebbe avere due sistemi che possono
-dissentire sullo stesso fatto.
+app, non tocca Supabase. Quel lavoro lo fa già il QA Agent con cinque
+agenti dedicati (più Sentry, che non è un agente ma un riepilogo errori),
+e rifarlo qui significherebbe avere due sistemi che possono dissentire
+sullo stesso fatto.
 
 ```
 qa-agent          →  controlla e produce i dati
@@ -58,7 +58,7 @@ statica su GitHub Pages che legge due sorgenti pubbliche:
 
 ```
 raw.githubusercontent.com
-├── qa-agent/status/*.json          esito dei sei agenti (vedi qa-agent/status/README.md)
+├── qa-agent/status/*.json          esito dei cinque agenti (vedi qa-agent/status/README.md)
 ├── qa-agent/status/sentry.json     errori lato client delle ultime 24h
 ├── qa-agent/history/data/*.jsonl   ripiego finché un agente non pubblica lo stato
 └── Prova/REPORT.md, data/…         dati che Predict committa da sé
@@ -113,25 +113,25 @@ arrivano al browser.
 ## Soglie
 
 "Controllo Completo" gira **ogni notte alle 02:00 UTC** (le 4 del mattino
-in Italia d'estate, le 3 d'inverno) e lancia tutti e sei gli agenti. Le
+in Italia d'estate, le 3 d'inverno) e lancia tutti e cinque gli agenti. Le
 soglie seguono quella cadenza:
 
 | Segnale | Giallo | Rosso | Perché |
 |---|---|---|---|
 | QA, Data Health, API Doctor, Performance | 36 ore | 72 ore | Un giro notturno saltato capita; tre di fila no |
-| Scale, Security | 3 giorni | 7 giorni | Cambiano lentamente, un ritardo non è un'emergenza |
+| Security | 3 giorni | 7 giorni | Cambia lentamente, un ritardo non è un'emergenza |
 | Previsioni Predict | — | slot delle 7:00 ET passato | Solo nei giorni feriali, e solo dopo la chiusura della finestra di recupero |
 | Valutazioni Predict | 1 in ritardo | oltre 3 | Oltre 3 giorni dalla scadenza dell'orizzonte |
 | Errori Sentry | 1 issue aperta | una issue `fatal` | Un errore va guardato, non è un incendio |
 
 Il rosso di Data Health a 72 ore lascia **4 giorni di margine** prima che
-Supabase sospenda i database: è un test, non un commento.
+Supabase sospenda il database: è un test, non un commento.
 
 Stanno tutte in `config.js`.
 
 ## Ultimi cambiamenti
 
-Una riga per commit, unendo le quattro app più qa-agent. Risponde alla
+Una riga per commit, unendo le tre app più qa-agent. Risponde alla
 prima domanda che ci si fa quando qualcosa diventa rosso: **"cosa ho
 toccato?"**
 
@@ -143,7 +143,7 @@ La regola sta in `isAutomatico()` in `rules.js`.
 
 ## Lanciare un controllo a mano
 
-Il bottone **"Lancia un controllo"** apre l'elenco dei sette workflow e
+Il bottone **"Lancia un controllo"** apre l'elenco dei sei workflow e
 porta alla pagina di quello scelto su GitHub, dove si preme "Run workflow".
 
 **Perché un link e non un bottone che lo lancia davvero**: far partire un

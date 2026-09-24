@@ -133,7 +133,7 @@ async function getApi(path) {
 /**
  * Lo stato pubblicato dai sei agenti in qa-agent (`status/<agente>.json`).
  *
- * Per i quattro agenti che tengono anche uno storico esiste un ripiego su
+ * Per i tre agenti che tengono anche uno storico esiste un ripiego su
  * `history/data/<agente>.jsonl`: finché quei workflow non girano almeno una
  * volta dopo l'introduzione di `status/`, i file di stato non esistono
  * ancora, ma l'ultima riga dello storico contiene comunque un esito reale
@@ -159,10 +159,10 @@ export async function loadAgentStatus() {
   return Object.fromEntries(results);
 }
 
-// Solo questi quattro tengono uno storico: QA Agent e API Doctor non ne
-// hanno mai avuto uno, quindi per loro non c'è nessun ripiego possibile —
-// finché non girano una volta restano, correttamente, "sconosciuti".
-const HISTORY_AGENTS = new Set(["data-health", "performance", "scale", "security"]);
+// Solo questi tre tengono uno storico: QA Agent e API Doctor non ne hanno
+// mai avuto uno, quindi per loro non c'è nessun ripiego possibile — finché
+// non girano una volta restano, correttamente, "sconosciuti".
+const HISTORY_AGENTS = new Set(["data-health", "performance", "security"]);
 
 // Ricostruisce lo stato per app dall'ultima riga utile dello storico JSONL.
 // Le righe sono una per run e per app: si tiene, per ogni app, la più
@@ -198,10 +198,9 @@ function fromHistory(agentId, text) {
   return apps;
 }
 
-// Scale riguarda solo CineFighi e Security solo la toolchain: le loro righe
-// di storico non contengono un campo `app` perché non ne hanno bisogno.
+// Security riguarda solo la toolchain: le sue righe di storico non
+// contengono un campo `app` perché non ne hanno bisogno.
 function defaultAppFor(agentId) {
-  if (agentId === "scale") return "cinefighi";
   if (agentId === "security") return "qa-agent";
   return null;
 }
@@ -213,7 +212,6 @@ function canonicalApp(name) {
 function summaryFromHistory(agentId, row) {
   if (agentId === "data-health") return `${row.issueCount ?? 0} anomalie`;
   if (agentId === "performance") return `Perf ${row.performance} · A11y ${row.accessibility}`;
-  if (agentId === "scale") return `${row.targetCount} titoli · Home ${row.homeReadyMs}ms`;
   if (agentId === "security") return `${row.total ?? 0} vulnerabilità`;
   return "";
 }
@@ -222,7 +220,6 @@ function metricsFromHistory(agentId, row) {
   const pick = (keys) => Object.fromEntries(keys.filter((k) => row[k] != null).map((k) => [k, row[k]]));
   if (agentId === "data-health") return pick(["users", "titles", "votes", "entries"]);
   if (agentId === "performance") return pick(["performance", "accessibility", "best-practices", "seo"]);
-  if (agentId === "scale") return pick(["targetCount", "homeReadyMs", "libraryFirstPageMs", "statsReadyMs"]);
   if (agentId === "security") return pick(["critical", "high", "moderate", "low", "total"]);
   return {};
 }
