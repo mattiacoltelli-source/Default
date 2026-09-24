@@ -7,7 +7,7 @@
 // copia offline esiste (in localStorage, gestita da sources.js) ma è
 // dichiarata a schermo come tale, con la sua età.
 
-const VERSION = "v10";
+const VERSION = "v11";
 const SHELL = `acc-shell-${VERSION}`;
 
 const ASSETS = [
@@ -29,16 +29,38 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(SHELL).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(SHELL).then((c) => c.addAll(ASSETS)));
+  // Non chiamiamo più skipWaiting() qui: il nuovo service worker resta "in
+  // attesa" finché l'utente non preme "Aggiorna" nel banner (vedi il
+  // messaggio SKIP_WAITING sotto, e initUpdateCheck() in app.js) — così un
+  // aggiornamento non sostituisce mai la pagina sotto i piedi di chi la sta
+  // guardando in quel momento.
 });
+
+// Prendiamo il controllo dei tab già aperti (clients.claim) SOLO quando
+// questa attivazione arriva da un aggiornamento scelto dall'utente
+// (messaggio SKIP_WAITING). Alla primissima installazione non c'è nulla da
+// aggiornare: reclamare comunque il tab appena caricato farebbe scattare
+// "controllerchange" in app.js, che ricaricherebbe la pagina da sola un
+// attimo dopo la primissima apertura, senza preavviso.
+let claimOnActivate = false;
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== SHELL).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
+      .then(() => claimOnActivate && self.clients.claim())
   );
+});
+
+// Quando l'app manda il messaggio "SKIP_WAITING" (dopo che l'utente ha
+// premuto "Aggiorna" nel banner), passiamo subito alla versione nuova.
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING" || event.data?.type === "SKIP_WAITING") {
+    claimOnActivate = true;
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("fetch", (event) => {
