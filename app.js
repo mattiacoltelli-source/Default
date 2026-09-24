@@ -76,7 +76,7 @@ function renderVerdict(level, problems, appStates) {
   } else {
     state = count === 1 ? "1 problema richiede attenzione" : `${count} problemi richiedono attenzione`;
     // Quante cose sono gravi conta più di quali app sono coinvolte: con
-    // cinque app l'elenco dei nomi diventa una riga lunga che non dice da
+    // più app l'elenco dei nomi diventa una riga lunga che non dice da
     // dove cominciare.
     const gravi = problems.filter((p) => p.severity === "HIGH").length;
     detail = [gravi && `${gravi} ${gravi === 1 ? "grave" : "gravi"}`, count - gravi && `${count - gravi} da guardare`].filter(Boolean).join(" · ");

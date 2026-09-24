@@ -1,9 +1,9 @@
 // Segnali che riguardano solo Predict (repo `Prova`).
 //
-// È l'unica delle quattro app che pubblica i propri dati come file
+// È l'unica delle tre app che pubblica i propri dati come file
 // committati — previsioni, esiti, stato degli slot — e quindi l'unica che
 // può dire da sola se sta facendo il suo lavoro, non solo se la pagina si
-// apre. Le altre tre hanno bisogno di un agente che le guardi da fuori.
+// apre. Le altre due hanno bisogno di un agente che le guardi da fuori.
 //
 // Il segnale più importante di tutta la dashboard nasce qui, ed è
 // un'assenza: se il file dello slot di oggi non c'è, la previsione non è

@@ -59,11 +59,6 @@ test("Data Health diventa rosso con 4 giorni di margine sulla sospensione Supaba
   );
 });
 
-test("Scale e Security tollerano più ritardo: cambiano lentamente", () => {
-  const scale = evaluateSignal({ agentId: "scale", entry: { result: "PASS", runAt: hoursAgo(48) }, now: NOW });
-  assert.equal(scale.level, OK);
-});
-
 test("un segnale mancante è sconosciuto, mai verde", () => {
   const s = evaluateSignal({ agentId: "qa", entry: undefined, now: NOW });
   assert.equal(s.level, UNKNOWN);
@@ -121,24 +116,6 @@ test("una app prende il peggiore dei suoi segnali", () => {
   assert.equal(state.problems[0].appLabel, "Spot");
 });
 
-test("un agente sospeso non compare da nessuna parte, nemmeno come dubbio", () => {
-  // Scale e QA sono sospesi su CineFighi (vedi config.js): un segnale che
-  // non esiste più per scelta non deve restare "sconosciuto" per sempre.
-  const statusByAgent = { scale: { data: { apps: { cinefighi: { result: "PASS", runAt: hoursAgo(5) } } } } };
-
-  for (const app of [APP_BY_ID.cinefighi, APP_BY_ID.spot]) {
-    const state = evaluateApp({ app, statusByAgent, now: NOW });
-    assert.ok(!state.signals.some((s) => s.agentId === "scale"), `scale non deve comparire su ${app.id}`);
-  }
-
-  const cinefighi = evaluateApp({ app: APP_BY_ID.cinefighi, statusByAgent: {}, now: NOW });
-  assert.ok(!cinefighi.signals.some((s) => s.agentId === "qa"), "nemmeno il QA Agent, sospeso su CineFighi");
-
-  // Sulle altre app il QA Agent resta un segnale vero.
-  const spot = evaluateApp({ app: APP_BY_ID.spot, statusByAgent: {}, now: NOW });
-  assert.ok(spot.signals.some((s) => s.agentId === "qa"));
-});
-
 test("un agente che non copre una app non la rende eternamente sconosciuta", () => {
   // Data Health e Performance non guardano Predict (nessun backend, nessuna
   // pagina misurata): senza il filtro di copertura la card resterebbe
@@ -172,14 +149,14 @@ test("gli errori Sentry sono un segnale come gli altri e pesano sulla card", () 
 });
 
 test("un agente che copre una app ma non l'ha mai controllata resta un dubbio vero", () => {
-  const state = evaluateApp({ app: APP_BY_ID.cinefighi, statusByAgent: {}, now: NOW });
+  const state = evaluateApp({ app: APP_BY_ID.cinetracker, statusByAgent: {}, now: NOW });
   assert.ok(state.signals.some((s) => s.agentId === "data-health" && s.level === UNKNOWN));
   assert.equal(state.level, UNKNOWN);
 });
 
 test("Security non finisce dentro le card delle app: riguarda la toolchain", () => {
   const statusByAgent = { security: { data: { apps: { "qa-agent": { result: "FAIL", runAt: hoursAgo(1) } } } } };
-  const state = evaluateApp({ app: APP_BY_ID.cinefighi, statusByAgent, now: NOW });
+  const state = evaluateApp({ app: APP_BY_ID.cinetracker, statusByAgent, now: NOW });
   assert.ok(!state.signals.some((s) => s.agentId === "security"));
 });
 
@@ -190,9 +167,21 @@ test("i segnali esterni entrano nel giudizio della app", () => {
   assert.equal(state.problems[0].appLabel, "Predict");
 });
 
+// App inventata invece di una vera: appMetrics() è generica, e legare il
+// test a una app reale lo romperebbe ogni volta che le sue metriche
+// cambiano in config.js senza che il comportamento testato sia cambiato.
+const APP_FINTA = {
+  id: "finta",
+  metrics: [
+    { agent: "data-health", key: "users", label: "utenti" },
+    { agent: "data-health", key: "titles", label: "titoli" },
+    { agent: "data-health", key: "votes", label: "voti" },
+  ],
+};
+
 test("le metriche di prodotto arrivano dall'agente che le produce", () => {
-  const statusByAgent = { "data-health": { data: { apps: { cinefighi: { metrics: { users: 7, titles: 565, votes: 961 } } } } } };
-  assert.deepEqual(appMetrics(APP_BY_ID.cinefighi, statusByAgent), [
+  const statusByAgent = { "data-health": { data: { apps: { finta: { metrics: { users: 7, titles: 565, votes: 961 } } } } } };
+  assert.deepEqual(appMetrics(APP_FINTA, statusByAgent), [
     { label: "utenti", value: 7 },
     { label: "titoli", value: 565 },
     { label: "voti", value: 961 },
@@ -200,8 +189,8 @@ test("le metriche di prodotto arrivano dall'agente che le produce", () => {
 });
 
 test("una metrica assente non diventa zero", () => {
-  const statusByAgent = { "data-health": { data: { apps: { cinefighi: { metrics: {} } } } } };
-  assert.deepEqual(appMetrics(APP_BY_ID.cinefighi, statusByAgent), []);
+  const statusByAgent = { "data-health": { data: { apps: { finta: { metrics: {} } } } } };
+  assert.deepEqual(appMetrics(APP_FINTA, statusByAgent), []);
 });
 
 test("i problemi sono ordinati per urgenza", () => {
@@ -252,17 +241,17 @@ test("i commit automatici non sono 'cambiamenti recenti'", () => {
 
 test("la cronologia unisce le app e ordina dal più recente", () => {
   const activity = {
-    cinefighi: { data: { commits: [
+    cinetracker: { data: { commits: [
       { sha: "aaa", message: "fix: voto su iOS", at: new Date(NOW - 2 * H).toISOString(), url: "u1" },
       { sha: "bbb", message: "chore: bump versione [skip ci]", at: new Date(NOW - 1 * H).toISOString(), url: "u2" },
     ] } },
     spot: { data: { commits: [{ sha: "ccc", message: "Aggiunge Sentry", at: new Date(NOW - 5 * H).toISOString(), url: "u3" }] } },
   };
-  const repos = [{ id: "cinefighi", label: "CineFighi" }, { id: "spot", label: "Spot" }];
+  const repos = [{ id: "cinetracker", label: "CineTracker" }, { id: "spot", label: "Spot" }];
 
   const changes = recentChanges(activity, repos);
   assert.deepEqual(changes.map((c) => c.message), ["fix: voto su iOS", "Aggiunge Sentry"]);
-  assert.equal(changes[0].appLabel, "CineFighi");
+  assert.equal(changes[0].appLabel, "CineTracker");
 });
 
 test("senza dati dall'API la cronologia è vuota, non inventata", () => {
@@ -295,7 +284,7 @@ test("appena pubblica una volta, il segnale opzionale torna a giudicare", () => 
     qa: { data: { apps: { spot: { result: "PASS", runAt: hoursAgo(3) } } } },
     // Ha pubblicato per un'altra app ma non per questa: è un dubbio vero,
     // non una integrazione mancante.
-    sentry: { data: { apps: { cinefighi: { result: "PASS", runAt: hoursAgo(3) } } } },
+    sentry: { data: { apps: { prova: { result: "PASS", runAt: hoursAgo(3) } } } },
   };
 
   const state = evaluateApp({ app: APP_BY_ID.spot, statusByAgent, now: NOW });

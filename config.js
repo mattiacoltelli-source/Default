@@ -11,7 +11,7 @@ export const H = 60 * 60 * 1000;
 // Usata come "release" per Sentry: serve a capire da quale versione della
 // pagina arriva un errore. Va alzata quando si cambia qualcosa di
 // sostanziale, insieme a VERSION in sw.js.
-export const APP_VERSION = "1.2.3";
+export const APP_VERSION = "1.3.0";
 
 // ─── Agenti ──────────────────────────────────────────────────────────────
 // `warnH`/`failH`: dopo quante ore un esito smette di valere.
@@ -21,7 +21,7 @@ export const APP_VERSION = "1.2.3";
 // — e mostrarlo verde sarebbe una bugia.
 //
 // Le soglie seguono la cadenza reale: "Controllo Completo" (full-check.yml)
-// gira ogni notte alle 02:00 UTC e lancia tutti e sei gli agenti. Quindi:
+// gira ogni notte alle 02:00 UTC e lancia tutti e cinque gli agenti. Quindi:
 //
 // - giallo a 36 ore: un giro saltato può succedere (i cron di GitHub
 //   Actions arrivano in ritardo o non partono affatto sotto carico), ma
@@ -34,13 +34,13 @@ export const APP_VERSION = "1.2.3";
 // controllo ogni 3-4 giorni la dashboard viveva quasi sempre al limite del
 // giallo: una soglia che sta sempre per scattare non segnala più niente.
 //
-// Scale e Security restano più larghi: cambiano lentamente e un loro
-// ritardo non è mai un'emergenza.
+// Security resta più largo: cambia lentamente e un suo ritardo non è mai
+// un'emergenza.
 //
 // Nota su Data Health: Supabase free tier sospende un progetto dopo 7
-// giorni senza richieste API, e il giro notturno è ciò che tiene svegli i
-// database di CineFighi e CineTracker. Col rosso a 72 ore il problema si
-// vede con quattro giorni di margine sulla sospensione.
+// giorni senza richieste API, e il giro notturno è ciò che tiene sveglio il
+// database di CineTracker. Col rosso a 72 ore il problema si vede con
+// quattro giorni di margine sulla sospensione.
 //
 // `covers`: quali app quell'agente guarda davvero, letto dai `PROJECTS` dei
 // rispettivi engine in qa-agent. Serve a distinguere due silenzi che si
@@ -51,25 +51,14 @@ export const APP_VERSION = "1.2.3";
 // Dati e Performance — che non la coprono perché non ha un backend né una
 // pagina da misurare come le altre — e un dubbio permanente insegna in
 // fretta a ignorare tutti i dubbi.
-const ALL = ["cinefighi", "cinetracker", "spot", "prova"];
-const CON_BACKEND = ["cinefighi", "cinetracker", "spot"];
-// CineFighi è sospesa dal QA Agent e dallo Scale Agent (2026-09-23): è
-// l'unica app con un database condiviso da persone vere, e quelle due
-// suite erano le uniche a scriverci dentro. I controlli che restano su
-// CineFighi — uptime, integrità dati, Lighthouse, API, errori — sono tutti
-// di sola lettura.
-//
-// Toglierla da `covers` e non lasciarla "sconosciuta": un segnale che non
-// esiste più per scelta non è un dubbio, e un dubbio permanente insegna a
-// ignorare i dubbi.
-const SENZA_CINEFIGHI = ALL.filter((a) => a !== "cinefighi");
+const ALL = ["cinetracker", "spot", "prova"];
+const CON_BACKEND = ["cinetracker", "spot"];
 
 export const AGENTS = [
-  { id: "qa", label: "QA", short: "Test end-to-end", warnH: 36, failH: 72, covers: SENZA_CINEFIGHI },
+  { id: "qa", label: "QA", short: "Test end-to-end", warnH: 36, failH: 72, covers: ALL },
   { id: "data-health", label: "Dati", short: "Uptime e integrità", warnH: 36, failH: 72, covers: CON_BACKEND },
   { id: "api-doctor", label: "API", short: "API esterne", warnH: 36, failH: 72, covers: ALL },
   { id: "performance", label: "Perf", short: "Lighthouse", warnH: 36, failH: 72, covers: CON_BACKEND },
-  { id: "scale", label: "Scala", short: "Tenuta a molti dati", warnH: 72, failH: 168, covers: [] },
   { id: "security", label: "Dipendenze", short: "npm audit di qa-agent", warnH: 72, failH: 168, covers: [] },
   // Non è un agente del QA Agent: è il riassunto delle issue aperte su
   // Sentry nelle ultime 24 ore, pubblicato dallo stesso workflow notturno
@@ -92,7 +81,7 @@ export const AGENTS = [
 
 export const AGENT_BY_ID = Object.fromEntries(AGENTS.map((a) => [a.id, a]));
 
-// Due segnali che non riguardano nessuna delle quattro app: le dipendenze
+// Due segnali che non riguardano nessuna delle tre app: le dipendenze
 // di qa-agent e gli errori della dashboard stessa. Vivono in fondo alla
 // pagina, non dentro una card, perché non è di loro che ti preoccupi
 // quando apri l'app — ma se il Control Center va in errore è bene saperlo
@@ -102,24 +91,12 @@ export const TOOLCHAIN = [
   { agent: "sentry", key: "control-center", label: "Control Center", detail: "errori di questa pagina" },
 ];
 
-// ─── Le quattro app ──────────────────────────────────────────────────────
+// ─── Le tre app ──────────────────────────────────────────────────────────
 // `metrics`: solo numeri che dicono qualcosa sul prodotto. Nessuna metrica
 // è qui perché "sta bene in una dashboard" — Spot infatti non ne ha
 // nessuna, perché non ha un backend da cui leggerle e inventarle sarebbe
 // peggio che lasciarle fuori.
 export const APPS = [
-  {
-    id: "cinefighi",
-    label: "CineFighi",
-    tagline: "Cinema di gruppo",
-    repo: "CineFighi",
-    site: `https://${OWNER}.github.io/CineFighi/`,
-    metrics: [
-      { agent: "data-health", key: "users", label: "utenti" },
-      { agent: "data-health", key: "titles", label: "titoli" },
-      { agent: "data-health", key: "votes", label: "voti" },
-    ],
-  },
   {
     id: "cinetracker",
     label: "CineTracker",
@@ -197,12 +174,11 @@ export const PREDICT = {
 const WF = (repo, file) => `https://github.com/${OWNER}/${repo}/actions/workflows/${file}`;
 
 export const WORKFLOWS = [
-  { id: "full-check", label: "Controllo Completo", detail: "Tutti e sei gli agenti, in sequenza", url: WF(QA_REPO, "full-check.yml"), primary: true },
-  { id: "tests", label: "QA Agent", detail: "Test end-to-end sulle quattro app", url: WF(QA_REPO, "tests.yml") },
+  { id: "full-check", label: "Controllo Completo", detail: "Tutti e cinque gli agenti, in sequenza", url: WF(QA_REPO, "full-check.yml"), primary: true },
+  { id: "tests", label: "QA Agent", detail: "Test end-to-end sulle tre app", url: WF(QA_REPO, "tests.yml") },
   { id: "data-health", label: "Data Health", detail: "Uptime e integrità dei dati", url: WF(QA_REPO, "data-health.yml") },
   { id: "api-doctor", label: "API Doctor", detail: "API esterne da cui dipendono le app", url: WF(QA_REPO, "api-doctor.yml") },
   { id: "performance", label: "Performance", detail: "Punteggi Lighthouse", url: WF(QA_REPO, "performance.yml") },
-  { id: "scale", label: "Scale", detail: "CineFighi con molti più titoli", url: WF(QA_REPO, "scale.yml") },
   { id: "security", label: "Security", detail: "npm audit delle dipendenze", url: WF(QA_REPO, "security.yml") },
 ];
 
@@ -214,8 +190,8 @@ export const WORKFLOWS = [
 //
 // Bundle esplicito e non il Loader Script: per le organizzazioni con
 // residenza dati in Europa come questa il loader risponde 200 ma serve uno
-// stub che ignora ogni chiamata. Stessa versione già usata da CineFighi e
-// CineTracker, così le quattro app restano allineate. Vedi sentry.js.
+// stub che ignora ogni chiamata. Stessa versione già usata dalle altre app,
+// così restano allineate. Vedi sentry.js.
 export const SENTRY = {
   bundle: "https://browser.sentry-cdn.com/10.75.0/bundle.min.js",
   dsn: "https://e844e6a55fcc8378014c079674522711@o4511991055450112.ingest.de.sentry.io/4512109896335440",
