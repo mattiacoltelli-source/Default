@@ -83,13 +83,19 @@ export const AGENT_BY_ID = Object.fromEntries(AGENTS.map((a) => [a.id, a]));
 
 // Quando aspettarsi il giro notturno.
 //
-// `cronUtcHour` è quello che chiede il workflow (`cron: "0 2 * * *"` in
-// qa-agent/.github/workflows/full-check.yml). `typicalDelayH` è quello che
-// GitHub fa davvero, ed è tutt'altro numero: sui runner gratuiti i job
-// schedulati partono quando c'è capacità, e il minuto 0 è lo slot più
-// congestionato di tutti. Misurato sui giri schedulati dal 19 al 25
-// settembre 2026: partiti fra le 06:51 e le 07:25 UTC, cioè cinque ore
+// `cronUtcHour` è quello che chiede il workflow (`cron: "11 2 * * *"` in
+// qa-agent/.github/workflows/full-check.yml — arrotondato all'ora, che è
+// la precisione di questa stima). `typicalDelayH` è quello che GitHub fa
+// davvero, ed è tutt'altro numero: sui runner gratuiti i job schedulati
+// partono quando c'è capacità, e il minuto 0 è lo slot più congestionato
+// di tutti. Misurato sui giri dal 19 al 25 settembre 2026, quando il cron
+// era ancora "0 2": partiti fra le 06:51 e le 07:25 UTC, cioè cinque ore
 // dopo. Prima, con una cadenza meno fitta, anche più tardi.
+//
+// Il cron è stato spostato al minuto 11 proprio per uscire da quello slot.
+// Se funziona, i prossimi giri partiranno verso le 02:11 e questo numero
+// va riportato a 0 — finché non è verificato resta 5, perché è quello che
+// i dati dicono oggi.
 //
 // Mostrare l'ora del cron sarebbe formalmente esatto e praticamente una
 // bugia: alle 05:00 UTC uno leggerebbe "doveva girare tre ore fa" e

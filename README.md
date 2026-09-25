@@ -131,12 +131,17 @@ del cron sarebbe formalmente esatto e praticamente una bugia: alle 05:00
 uno leggerebbe "doveva girare tre ore fa" e cercherebbe un guasto che non
 c'è. Entrambi i numeri stanno in `FULL_CHECK` in `config.js`.
 
+Il cron di qa-agent è poi stato spostato dal minuto 0 al minuto 11, che è
+l'unica leva contro quel ritardo: a inizio ora c'è la coda più lunga. Se
+funziona, `typicalDelayH` va riportato a 0 — finché non lo si vede sui
+giri veri resta 5.
+
 Resta una stima, e non giudica: a decidere quando un ritardo è un problema
 restano le soglie qui sotto.
 
 ## Soglie
 
-"Controllo Completo" è schedulato **ogni notte alle 02:00 UTC** (le 4 del
+"Controllo Completo" è schedulato **ogni notte alle 02:11 UTC** (le 4 del
 mattino in Italia d'estate, le 3 d'inverno) e lancia tutti e cinque gli
 agenti — nella pratica GitHub lo fa partire qualche ora più tardi, vedi
 sopra. Le soglie seguono quella cadenza:
