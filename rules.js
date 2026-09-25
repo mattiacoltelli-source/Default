@@ -184,6 +184,86 @@ export function clockTime(timestamp) {
   return new Date(timestamp).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
 }
 
+// "14 ore fa" dice se un dato è vecchio, non se il giro di stanotte è
+// partito: per quello serve l'ora, e l'ora da sola non dice se è di oggi.
+// Vanno dette tutte e due, ed è per questo che questa funzione esiste
+// accanto a describeAgo invece che al posto suo.
+//
+// Il giorno si confronta in ora locale, non UTC: chi legge sta guardando
+// il suo orologio, e un controllo delle 02:00 UTC in Italia è "oggi alle
+// 03:00" o "alle 04:00" a seconda del periodo dell'anno, mai "ieri".
+// `prep` esiste per una ragione sola: un orario misurato ("oggi ALLE
+// 08:52") e un orario stimato ("domani VERSO LE 09:00") non vanno detti
+// con la stessa parola, o la stima si legge come una promessa.
+export function describeWhen(timestamp, now, prep = "alle") {
+  if (!Number.isFinite(timestamp)) return "—";
+
+  const giorno = (t) => {
+    const d = new Date(t);
+    return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  };
+  const scarto = Math.round((giorno(timestamp) - giorno(now)) / (24 * H));
+  const ora = clockTime(timestamp);
+
+  if (scarto === 0) return `oggi ${prep} ${ora}`;
+  if (scarto === -1) return `ieri ${prep} ${ora}`;
+  if (scarto === 1) return `domani ${prep} ${ora}`;
+
+  const data = new Date(timestamp).toLocaleDateString("it-IT", { day: "numeric", month: "long" });
+  return `${data} ${prep} ${ora}`;
+}
+
+/**
+ * Quando è stato fatto l'ultimo controllo davvero.
+ *
+ * Non è la stessa cosa della riga in cima alla pagina, che dice da quanto
+ * la dashboard ha SCARICATO i file: quella può dire "adesso" mentre
+ * l'ultimo giro è di stanotte. Sono due domande diverse e la seconda è
+ * quella che conta, quindi ha una voce sua.
+ *
+ * Si prende il run più recente fra tutti gli agenti e tutte le app, non il
+ * più vecchio: la domanda è "quando è stata l'ultima volta che qualcosa ha
+ * controllato", non "quanto è indietro il più pigro" — quello lo dicono
+ * già le età dentro le card, segnale per segnale, che è il posto dove
+ * serve saperlo.
+ */
+export function lastCheck(statusByAgent, now) {
+  let migliore = null;
+
+  for (const [agentId, res] of Object.entries(statusByAgent ?? {})) {
+    for (const entry of Object.values(res?.data?.apps ?? {})) {
+      const runAt = Date.parse(entry?.runAt ?? "");
+      if (!Number.isFinite(runAt)) continue;
+      if (migliore && migliore.runAt >= runAt) continue;
+      migliore = { runAt, runUrl: entry.runUrl ?? null, agentId, label: AGENT_BY_ID[agentId]?.label ?? agentId };
+    }
+  }
+
+  return migliore && { ...migliore, ageMs: now - migliore.runAt };
+}
+
+/**
+ * Quando aspettarsi il prossimo giro notturno.
+ *
+ * Serve a dare un senso al numero qui sopra: "14 ore fa" da solo sembra un
+ * ritardo, con accanto il prossimo giro diventa un'attesa normale — o, se
+ * il prossimo è fra poco, un buon motivo per non lanciare niente a mano.
+ *
+ * `utcHour` è l'ora ATTESA, non quella del cron: vedi FULL_CHECK in
+ * config.js per la differenza (e per quanto vale). Può superare 23 —
+ * cron a mezzanotte più qualche ora di ritardo — e Date.UTC normalizza da
+ * sé nel giorno dopo, che è esattamente il comportamento giusto.
+ *
+ * Resta una stima. Le soglie di scadenza in config.js esistono proprio
+ * perché i giri saltano, e restano loro a decidere quando un ritardo
+ * diventa un problema: questa riga informa, non giudica.
+ */
+export function nextFullCheck(now, utcHour) {
+  const d = new Date(now);
+  const oggi = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), utcHour);
+  return oggi > now ? oggi : oggi + 24 * H;
+}
+
 // ─── Cambiamenti recenti ─────────────────────────────────────────────────
 
 // Commit che le macchine scrivono a se stesse: bump di versione, storico

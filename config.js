@@ -11,7 +11,7 @@ export const H = 60 * 60 * 1000;
 // Usata come "release" per Sentry: serve a capire da quale versione della
 // pagina arriva un errore. Va alzata quando si cambia qualcosa di
 // sostanziale, insieme a VERSION in sw.js.
-export const APP_VERSION = "1.4.0";
+export const APP_VERSION = "1.5.0";
 
 // ─── Agenti ──────────────────────────────────────────────────────────────
 // `warnH`/`failH`: dopo quante ore un esito smette di valere.
@@ -80,6 +80,30 @@ export const AGENTS = [
 ];
 
 export const AGENT_BY_ID = Object.fromEntries(AGENTS.map((a) => [a.id, a]));
+
+// Quando aspettarsi il giro notturno.
+//
+// `cronUtcHour` è quello che chiede il workflow (`cron: "0 2 * * *"` in
+// qa-agent/.github/workflows/full-check.yml). `typicalDelayH` è quello che
+// GitHub fa davvero, ed è tutt'altro numero: sui runner gratuiti i job
+// schedulati partono quando c'è capacità, e il minuto 0 è lo slot più
+// congestionato di tutti. Misurato sui giri schedulati dal 19 al 25
+// settembre 2026: partiti fra le 06:51 e le 07:25 UTC, cioè cinque ore
+// dopo. Prima, con una cadenza meno fitta, anche più tardi.
+//
+// Mostrare l'ora del cron sarebbe formalmente esatto e praticamente una
+// bugia: alle 05:00 UTC uno leggerebbe "doveva girare tre ore fa" e
+// penserebbe a un guasto che non c'è. È lo stesso errore, di segno
+// opposto, del PASS vecchio mostrato verde.
+//
+// Resta una stima, non una promessa: a decidere quando un ritardo è un
+// problema sono `warnH`/`failH` qui sopra, che guardano l'età dell'esito e
+// non l'orologio.
+//
+// Tutto in UTC perché il cron di GitHub è in UTC e non conosce l'ora
+// legale: in Italia lo stesso giro cade un'ora più tardi d'estate.
+// Convertire tocca a chi disegna, che sa in che fuso sta chi legge.
+export const FULL_CHECK = { cronUtcHour: 2, typicalDelayH: 5 };
 
 // Due segnali che non riguardano nessuna delle tre app: le dipendenze
 // di qa-agent e gli errori della dashboard stessa. Vivono in fondo alla

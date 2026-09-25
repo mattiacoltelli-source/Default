@@ -11,10 +11,10 @@
 // stringhe scritte da altri, e una dashboard non è il posto dove scoprire
 // che qualcuno ha messo uno <script> in un messaggio di commit.
 
-import { AGENT_BY_ID, APPS, APP_VERSION, REPOS, TOOLCHAIN, WORKFLOWS } from "./config.js";
+import { AGENT_BY_ID, APPS, APP_VERSION, FULL_CHECK, REPOS, TOOLCHAIN, WORKFLOWS } from "./config.js";
 import { initSentry } from "./sentry.js";
 import { apiQuota, clearCache, loadAgentStatus, loadPredict, loadRepoActivity } from "./sources.js";
-import { appMetrics, clockTime, collectProblems, describeAgo, evaluateApp, evaluateSignal, overallLevel, recentChanges, FAIL, OK, UNKNOWN, WARN } from "./rules.js";
+import { appMetrics, clockTime, collectProblems, describeAgo, describeWhen, evaluateApp, evaluateSignal, lastCheck, nextFullCheck, overallLevel, recentChanges, FAIL, OK, UNKNOWN, WARN } from "./rules.js";
 import { easternNow, predictMetrics, predictSignals } from "./predict.js";
 
 const STATE_LABEL = { [OK]: "Tutto ok", [WARN]: "Da guardare", [FAIL]: "Problema", [UNKNOWN]: "Sconosciuto" };
@@ -23,6 +23,7 @@ const el = {
   freshness: document.getElementById("freshness"),
   refresh: document.getElementById("refresh"),
   verdict: document.getElementById("verdict"),
+  lastcheck: document.getElementById("lastcheck"),
   attentionBlock: document.getElementById("attention-block"),
   problems: document.getElementById("problems"),
   showmore: document.getElementById("showmore"),
@@ -193,6 +194,38 @@ function renderCards(appStates, metricsByApp, activity) {
       ]);
     })
   );
+}
+
+// Quando è stato fatto l'ultimo controllo, e quando è previsto il prossimo.
+//
+// Due formati per la stessa data, di proposito: l'ora assoluta dice se il
+// giro è partito ("oggi alle 03:14" — quindi sì), quella relativa dice se
+// l'esito vale ancora ("14 ore fa"). Una sola delle due lascerebbe sempre
+// aperta l'altra domanda.
+//
+// Il link porta al run vero su GitHub quando lo conosciamo: `runUrl` è già
+// dentro i file di stato pubblicati da qa-agent, non costa nessuna
+// chiamata in più. Gli esiti ricostruiti dallo storico non ce l'hanno
+// (vedi fromHistory in sources.js) e in quel caso la riga resta testo.
+function renderLastCheck(ultimo, now) {
+  if (!ultimo) {
+    el.lastcheck.hidden = true;
+    return;
+  }
+
+  const quando = `${describeWhen(ultimo.runAt, now)} · ${describeAgo(ultimo.ageMs)}`;
+  const prossimo = nextFullCheck(now, FULL_CHECK.cronUtcHour + FULL_CHECK.typicalDelayH);
+
+  replace(el.lastcheck, [
+    node("span", { className: "lastcheck__key", text: "Ultimo controllo" }),
+    ultimo.runUrl
+      ? node("a", { className: "lastcheck__val", text: `${quando} ↗`, attrs: { href: ultimo.runUrl, rel: "noopener" } })
+      : node("span", { className: "lastcheck__val", text: quando }),
+    // "verso le", non "alle": è una stima costruita sul ritardo che GitHub
+    // ha di fatto sui job schedulati, non un orario garantito.
+    node("span", { className: "lastcheck__next", text: `Prossimo giro previsto ${describeWhen(prossimo, now, "verso le")}` }),
+  ]);
+  el.lastcheck.hidden = false;
 }
 
 // Una data ISO che arriva dall'API GitHub può mancare o essere illeggibile:
@@ -395,6 +428,7 @@ async function render({ force = false } = {}) {
   );
 
   renderVerdict(overallLevel(appStates, toolchain.filter((t) => t.signal.attivo !== false).map((t) => t.signal.level)), problems, appStates);
+  renderLastCheck(lastCheck(statusByAgent, now), now);
   renderProblems(problems);
   renderCards(appStates, metricsByApp, null);
   renderToolchain(toolchain);
@@ -449,7 +483,12 @@ function updateFreshness(results, now) {
 
   const oldest = Math.min(...withData.map((r) => r.at));
   const anyStale = results.some((r) => r?.stale);
-  el.freshness.textContent = anyStale ? `copia locale di ${describeAgo(now - oldest)} — non riesco ad aggiornare` : `aggiornato ${describeAgo(now - oldest)}`;
+  // "aggiornato adesso" era la stessa bugia che questa dashboard esiste per
+  // non raccontare, applicata a se stessa: `at` è quando i file sono stati
+  // SCARICATI, non quando il controllo è stato fatto. Può dire "adesso"
+  // mentre l'ultimo giro è di stanotte. Quando è stato fatto il controllo
+  // lo dice la voce sotto il verdetto (renderLastCheck).
+  el.freshness.textContent = anyStale ? `copia locale di ${describeAgo(now - oldest)} — non riesco ad aggiornare` : `dati scaricati ${describeAgo(now - oldest)}`;
 
   const sources = withData.filter((r) => r.data?.source === "history").length;
   const sentrySpento = results.some((r) => r?.agent === "sentry" && r.data == null);
@@ -464,6 +503,7 @@ function updateFreshness(results, now) {
 // Prima che arrivi qualunque dato: la forma di quello che arriverà, invece
 // di una pagina vuota seguita da uno scatto.
 function renderSkeleton() {
+  el.lastcheck.hidden = true;
   replace(el.verdict, [node("div", { className: "skel skel--verdict", attrs: { "aria-hidden": "true" } })]);
   el.verdict.removeAttribute("data-level");
   replace(el.cards, APPS.map(() => node("div", { className: "skel", attrs: { "aria-hidden": "true" } })));

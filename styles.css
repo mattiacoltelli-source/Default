@@ -161,6 +161,48 @@ a { color: inherit; }
   color: var(--muted);
 }
 
+/* ── Ultimo controllo ──────────────────────────────────────────────────
+   Fra il verdetto e il bottone, perché è quello che serve per decidere se
+   premerlo: un verdetto verde di stanotte e uno di sei giorni fa si
+   leggono in modo diverso.
+
+   Volutamente piccola e non dentro una card: è contesto, non un segnale in
+   più da valutare. Tre righe su telefono, una riga sola appena c'è spazio.
+   Il link ha l'area di tocco piena (--tap) perché su mobile è un bersaglio
+   vero, anche se il testo è piccolo. */
+
+.lastcheck {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  margin: calc(var(--gutter) * -0.5) var(--gutter) var(--gutter);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.lastcheck__key { font-weight: 600; }
+
+.lastcheck__val {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  color: var(--text);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+
+a.lastcheck__val { font-weight: 600; }
+a.lastcheck__val:active { opacity: 0.6; }
+
+/* Il prossimo giro va a capo da solo: è la meno urgente delle due
+   informazioni e non deve contendere spazio alla prima. */
+.lastcheck__next {
+  flex-basis: 100%;
+  margin-top: -10px;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Azione principale ─────────────────────────────────────────────────
    Subito sotto il verdetto: quando qualcosa non va, la cosa successiva che
    si vuole fare è rilanciare un controllo. */

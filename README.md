@@ -110,11 +110,36 @@ npm run serve # http://localhost:8080
 Non c'è passo di build: i file che stanno nel repo sono quelli che
 arrivano al browser.
 
+## Quando è stato fatto l'ultimo controllo
+
+Sotto il verdetto c'è la riga **Ultimo controllo**, con l'ora assoluta e
+quella relativa — *"oggi alle 08:52 · 8 ore fa"* — e il link al run vero su
+GitHub (`runUrl`, già dentro i file di stato: nessuna chiamata in più).
+
+Servono entrambe: l'ora assoluta dice se il giro è partito, quella relativa
+se l'esito vale ancora. E nessuna delle due è la riga sotto il titolo, che
+dice **"dati scaricati adesso"**: quella misura da quanto la dashboard ha
+scaricato i file, non da quanto è stato fatto il controllo. Diceva
+"aggiornato adesso" ed era, in piccolo, la stessa bugia che questa app
+esiste per non raccontare.
+
+Sotto, la stima del prossimo giro. Non è l'ora del cron: è l'ora del cron
+**più il ritardo che GitHub ha di fatto** sui job schedulati dei runner
+gratuiti — misurato fra il 19 e il 25 settembre 2026, cinque ore (giri
+partiti fra le 06:51 e le 07:25 UTC invece che alle 02:00). Scrivere l'ora
+del cron sarebbe formalmente esatto e praticamente una bugia: alle 05:00
+uno leggerebbe "doveva girare tre ore fa" e cercherebbe un guasto che non
+c'è. Entrambi i numeri stanno in `FULL_CHECK` in `config.js`.
+
+Resta una stima, e non giudica: a decidere quando un ritardo è un problema
+restano le soglie qui sotto.
+
 ## Soglie
 
-"Controllo Completo" gira **ogni notte alle 02:00 UTC** (le 4 del mattino
-in Italia d'estate, le 3 d'inverno) e lancia tutti e cinque gli agenti. Le
-soglie seguono quella cadenza:
+"Controllo Completo" è schedulato **ogni notte alle 02:00 UTC** (le 4 del
+mattino in Italia d'estate, le 3 d'inverno) e lancia tutti e cinque gli
+agenti — nella pratica GitHub lo fa partire qualche ora più tardi, vedi
+sopra. Le soglie seguono quella cadenza:
 
 | Segnale | Giallo | Rosso | Perché |
 |---|---|---|---|

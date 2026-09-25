@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Control Center">
-<link rel="stylesheet" href="styles.css?v=3">
+<link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
 
@@ -36,6 +36,11 @@
   <section class="verdict" id="verdict" aria-live="polite">
     <p class="verdict__state">Controllo in corso…</p>
   </section>
+
+  <!-- Sotto il verdetto e sopra il bottone: è il contesto che serve per
+       decidere se lanciare un controllo a mano o lasciar fare al giro
+       notturno. Resta nascosta finché non c'è un run da citare. -->
+  <p class="lastcheck" id="lastcheck" hidden></p>
 
   <div class="actions">
     <button type="button" class="action" id="launch-open">Lancia un controllo</button>
@@ -91,6 +96,6 @@
   <ul class="sheet__list" id="launch-list"></ul>
 </dialog>
 
-<script type="module" src="app.js?v=3"></script>
+<script type="module" src="app.js?v=4"></script>
 </body>
 </html>

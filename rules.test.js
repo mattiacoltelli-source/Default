@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { AGENT_BY_ID, APP_BY_ID, H, PREDICT, QA_BRANCH } from "./config.js";
-import { FAIL, OK, UNKNOWN, WARN, appMetrics, collectProblems, describeAge, describeAgo, evaluateApp, evaluateSignal, isAutomatico, overallLevel, recentChanges, worst } from "./rules.js";
+import { FAIL, OK, UNKNOWN, WARN, appMetrics, collectProblems, describeAge, describeAgo, describeWhen, evaluateApp, evaluateSignal, isAutomatico, lastCheck, nextFullCheck, overallLevel, recentChanges, worst } from "./rules.js";
 
 const NOW = Date.parse("2026-09-18T20:00:00.000Z");
 const hoursAgo = (h) => new Date(NOW - h * H).toISOString();
@@ -293,4 +293,86 @@ test("appena pubblica una volta, il segnale opzionale torna a giudicare", () => 
   assert.notEqual(sentry.attivo, false);
   assert.equal(sentry.level, UNKNOWN);
   assert.equal(state.level, UNKNOWN);
+});
+
+// ─── Ultimo controllo e prossimo giro ────────────────────────────────────
+// La domanda a cui rispondono è diversa da quella della riga in cima alla
+// pagina ("da quanto ho scaricato i file"): qui si parla di quando è
+// girato davvero un controllo. Confonderle era il bug che queste funzioni
+// esistono per chiudere.
+
+// NOW è 2026-09-18T20:00:00Z. I test che riguardano il giorno usano solo
+// scarti abbastanza grandi da restare dalla stessa parte della mezzanotte
+// in qualunque fuso europeo, così la suite non dipende da TZ.
+const statusCon = (righe) =>
+  Object.fromEntries(righe.map(([agent, apps]) => [agent, { data: { apps } }]));
+
+test("lastCheck: prende il run più recente fra tutti gli agenti e tutte le app", () => {
+  const found = lastCheck(
+    statusCon([
+      ["qa", { cinetracker: { runAt: hoursAgo(30), runUrl: "u-vecchio" }, spot: { runAt: hoursAgo(4), runUrl: "u-nuovo" } }],
+      ["api-doctor", { prova: { runAt: hoursAgo(9), runUrl: "u-medio" } }],
+    ]),
+    NOW
+  );
+  assert.equal(found.runUrl, "u-nuovo");
+  assert.equal(found.ageMs, 4 * H);
+});
+
+test("lastCheck: senza nessuna data utilizzabile restituisce null", () => {
+  assert.equal(lastCheck({}, NOW), null);
+  assert.equal(lastCheck(statusCon([["qa", { spot: { runAt: "mai" } }]]), NOW), null);
+  assert.equal(lastCheck(statusCon([["qa", {}]]), NOW), null);
+  assert.equal(lastCheck({ qa: null }, NOW), null);
+});
+
+// Gli esiti ricostruiti dallo storico non hanno un runUrl (fromHistory in
+// sources.js): la voce deve restare valida e diventare testo, non sparire.
+test("lastCheck: un run senza url resta valido, solo senza link", () => {
+  const found = lastCheck(statusCon([["performance", { spot: { runAt: hoursAgo(2), runUrl: null } }]]), NOW);
+  assert.equal(found.runUrl, null);
+  assert.equal(found.ageMs, 2 * H);
+});
+
+test("describeWhen: oggi, ieri e domani hanno un nome, il resto una data", () => {
+  assert.match(describeWhen(NOW, NOW), /^oggi alle /);
+  assert.match(describeWhen(NOW - 26 * H, NOW), /^ieri alle /);
+  assert.match(describeWhen(NOW + 26 * H, NOW), /^domani alle /);
+  assert.match(describeWhen(NOW - 5 * 24 * H, NOW), /^13 settembre alle /);
+});
+
+test("describeWhen: una data illeggibile non diventa 'NaN'", () => {
+  assert.equal(describeWhen(Number.NaN, NOW), "—");
+  assert.equal(describeWhen(Date.parse("mai"), NOW), "—");
+});
+
+test("nextFullCheck: è sempre nel futuro e sempre all'ora giusta UTC", () => {
+  for (const ore of [0, 1, 2, 3, 12, 23]) {
+    const adesso = Date.parse(`2026-09-18T${String(ore).padStart(2, "0")}:30:00.000Z`);
+    const next = nextFullCheck(adesso, 2);
+    assert.ok(next > adesso, `${ore}:30 -> il prossimo giro deve essere nel futuro`);
+    assert.equal(new Date(next).getUTCHours(), 2);
+    assert.ok(next - adesso <= 24 * H, `${ore}:30 -> mai oltre le 24 ore`);
+  }
+});
+
+// L'ora attesa è cron + ritardo tipico, e quella somma può sforare le 24
+// (un cron a mezzanotte più cinque ore). Date.UTC normalizza nel giorno
+// dopo: qui si blinda che sia davvero così, perché è il caso che non si
+// presenta con i numeri di oggi e si romperebbe in silenzio domani.
+test("nextFullCheck: un'ora oltre le 23 finisce nel giorno dopo, non fuori scala", () => {
+  const mezzanotte = Date.parse("2026-09-18T00:30:00.000Z");
+  assert.equal(nextFullCheck(mezzanotte, 22 + 5), Date.parse("2026-09-19T03:00:00.000Z"));
+});
+
+test("describeWhen: la preposizione distingue un orario misurato da uno stimato", () => {
+  assert.match(describeWhen(NOW, NOW, "verso le"), /^oggi verso le /);
+  assert.match(describeWhen(NOW, NOW), /^oggi alle /);
+});
+
+test("nextFullCheck: a cavallo dell'ora del giro passa al giorno dopo", () => {
+  const primaPer1min = Date.parse("2026-09-18T01:59:00.000Z");
+  const dopoPer1min = Date.parse("2026-09-18T02:01:00.000Z");
+  assert.equal(nextFullCheck(primaPer1min, 2), Date.parse("2026-09-18T02:00:00.000Z"));
+  assert.equal(nextFullCheck(dopoPer1min, 2), Date.parse("2026-09-19T02:00:00.000Z"));
 });
