@@ -3,7 +3,7 @@
 PWA statica che risponde a una domanda sola: **"le mie app stanno bene, o
 c'è qualcosa che richiede la mia attenzione?"**
 
-Monitora CineTracker, Spot e Predict. Si apre da telefono, dice la risposta
+Monitora CineTracker, Spot, Predict e VoiceBrief. Si apre da telefono, dice la risposta
 in tre secondi, e se la risposta è "no" dice cosa guardare e dove.
 
 👉 https://mattiacoltelli-source.github.io/Default/
@@ -161,7 +161,7 @@ Stanno tutte in `config.js`.
 
 ## Ultimi cambiamenti
 
-Una riga per commit, unendo le tre app più qa-agent. Risponde alla
+Una riga per commit, unendo le quattro app più qa-agent. Risponde alla
 prima domanda che ci si fa quando qualcosa diventa rosso: **"cosa ho
 toccato?"**
 

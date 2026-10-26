@@ -51,7 +51,7 @@ export const APP_VERSION = "1.5.0";
 // Dati e Performance — che non la coprono perché non ha un backend né una
 // pagina da misurare come le altre — e un dubbio permanente insegna in
 // fretta a ignorare tutti i dubbi.
-const ALL = ["cinetracker", "spot", "prova"];
+const ALL = ["cinetracker", "spot", "prova", "voicebrief"];
 const CON_BACKEND = ["cinetracker", "spot"];
 
 export const AGENTS = [
@@ -76,7 +76,7 @@ export const AGENTS = [
   // segnale che non è MAI esistito non fa ancora parte del sistema, mentre
   // uno che c'era e si è fermato è un problema. La differenza è quella tra
   // "non l'ho installato" e "si è rotto", e vanno dette in modo diverso.
-  { id: "sentry", label: "Errori", short: "Errori lato client, ultime 24h", warnH: 36, failH: 72, covers: ALL, optional: true },
+  { id: "sentry", label: "Errori", short: "Errori lato client, ultime 24h", warnH: 36, failH: 72, covers: ALL.filter((id) => id !== "voicebrief"), optional: true },
 ];
 
 export const AGENT_BY_ID = Object.fromEntries(AGENTS.map((a) => [a.id, a]));
@@ -111,7 +111,7 @@ export const AGENT_BY_ID = Object.fromEntries(AGENTS.map((a) => [a.id, a]));
 // Convertire tocca a chi disegna, che sa in che fuso sta chi legge.
 export const FULL_CHECK = { cronUtcHour: 2, typicalDelayH: 5 };
 
-// Due segnali che non riguardano nessuna delle tre app: le dipendenze
+// Due segnali che non riguardano nessuna delle quattro app: le dipendenze
 // di qa-agent e gli errori della dashboard stessa. Vivono in fondo alla
 // pagina, non dentro una card, perché non è di loro che ti preoccupi
 // quando apri l'app — ma se il Control Center va in errore è bene saperlo
@@ -121,7 +121,7 @@ export const TOOLCHAIN = [
   { agent: "sentry", key: "control-center", label: "Control Center", detail: "errori di questa pagina" },
 ];
 
-// ─── Le tre app ──────────────────────────────────────────────────────────
+// ─── Le quattro app ──────────────────────────────────────────────────────────
 // `metrics`: solo numeri che dicono qualcosa sul prodotto. Nessuna metrica
 // è qui perché "sta bene in una dashboard" — Spot infatti non ne ha
 // nessuna, perché non ha un backend da cui leggerle e inventarle sarebbe
@@ -154,6 +154,17 @@ export const APPS = [
     site: `https://${OWNER}.github.io/Prova/`,
     // Le metriche di Predict non vengono dagli agenti ma dai dati che l'app
     // stessa committa nel suo repo: vedi predict.js.
+    metrics: [],
+  },
+  {
+    id: "voicebrief",
+    label: "VoiceBrief",
+    tagline: "Vocali WhatsApp in riassunto",
+    repo: "voicebrief",
+    site: `https://${OWNER}.github.io/voicebrief/`,
+    // Nessun database né dati d'uso leggibili da qui: l'audio resta sul
+    // telefono. Coperta da QA e API (backend mockato nei test, backend vero
+    // controllato a costo zero), non da Dati, Performance ed Errori.
     metrics: [],
   },
 ];
@@ -205,7 +216,7 @@ const WF = (repo, file) => `https://github.com/${OWNER}/${repo}/actions/workflow
 
 export const WORKFLOWS = [
   { id: "full-check", label: "Controllo Completo", detail: "Tutti e cinque gli agenti, in sequenza", url: WF(QA_REPO, "full-check.yml"), primary: true },
-  { id: "tests", label: "QA Agent", detail: "Test end-to-end sulle tre app", url: WF(QA_REPO, "tests.yml") },
+  { id: "tests", label: "QA Agent", detail: "Test end-to-end sulle quattro app", url: WF(QA_REPO, "tests.yml") },
   { id: "data-health", label: "Data Health", detail: "Uptime e integrità dei dati", url: WF(QA_REPO, "data-health.yml") },
   { id: "api-doctor", label: "API Doctor", detail: "API esterne da cui dipendono le app", url: WF(QA_REPO, "api-doctor.yml") },
   { id: "performance", label: "Performance", detail: "Punteggi Lighthouse", url: WF(QA_REPO, "performance.yml") },
