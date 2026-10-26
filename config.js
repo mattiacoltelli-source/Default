@@ -33,7 +33,7 @@ export const H = 60 * 60 * 1000;
 // Dati e Performance — che non la coprono perché non ha un backend né una
 // pagina da misurare come le altre — e un dubbio permanente insegna in
 // fretta a ignorare tutti i dubbi.
-const ALL = ["cinefighi", "cinetracker", "spot", "prova"];
+const ALL = ["cinefighi", "cinetracker", "spot", "prova", "voicebrief"];
 const CON_BACKEND = ["cinefighi", "cinetracker", "spot"];
 
 export const AGENTS = [
@@ -51,7 +51,7 @@ export const AGENT_BY_ID = Object.fromEntries(AGENTS.map((a) => [a.id, a]));
 // app: vive in fondo alla pagina, non dentro una card.
 export const TOOLCHAIN_KEY = "qa-agent";
 
-// ─── Le quattro app ──────────────────────────────────────────────────────
+// ─── Le cinque app ──────────────────────────────────────────────────────
 // `metrics`: solo numeri che dicono qualcosa sul prodotto. Nessuna metrica
 // è qui perché "sta bene in una dashboard" — Spot infatti non ne ha
 // nessuna, perché non ha un backend da cui leggerle e inventarle sarebbe
@@ -96,6 +96,17 @@ export const APPS = [
     site: `https://${OWNER}.github.io/Prova/`,
     // Le metriche di Predict non vengono dagli agenti ma dai dati che l'app
     // stessa committa nel suo repo: vedi predict.js.
+    metrics: [],
+  },
+  {
+    id: "voicebrief",
+    label: "VoiceBrief",
+    tagline: "Vocali WhatsApp in riassunto",
+    repo: "voicebrief",
+    site: `https://${OWNER}.github.io/voicebrief/`,
+    // Nessun database né dati d'uso leggibili da qui: l'audio resta sul
+    // telefono. Coperta da QA e API (backend mockato nei test, backend vero
+    // controllato a costo zero), non da Dati e Performance.
     metrics: [],
   },
 ];

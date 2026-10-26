@@ -3,7 +3,7 @@
 PWA statica che risponde a una domanda sola: **"le mie app stanno bene, o
 c'è qualcosa che richiede la mia attenzione?"**
 
-Monitora CineFighi, CineTracker, Spot e Predict. Si apre da telefono, dice
+Monitora CineFighi, CineTracker, Spot, Predict e VoiceBrief. Si apre da telefono, dice
 la risposta in tre secondi, e se la risposta è "no" dice cosa guardare e
 dove.
 
